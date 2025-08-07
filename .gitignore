@@ -6,6 +6,7 @@ test/dummy/log/*.log
 test/dummy/tmp/
 test/dummy/.sass-cache
 .sass-cache/
+.idea/
 /lit-*.gem
 **.DS_Store
 Gemfile.lock

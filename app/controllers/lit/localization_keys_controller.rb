@@ -125,6 +125,8 @@ module Lit
           ret = localization_key.localizations.where(locale_id: Lit.init.cache.find_locale(locale).id).first
         end
         @_localization_for[key] = ret ? ret : false
+
+        ret ? ret : nil
       else
         ret
       end
