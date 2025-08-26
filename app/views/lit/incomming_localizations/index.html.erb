@@ -2,7 +2,7 @@
 <input type="hidden" id="source_id" value="<%= @source.id %>">
 <div class="container">
   <div class="row inline-headers">
-    <h4 class="<%= source_loading_class(@source) %>">Synchronization in progress, please wait. The page will refresh automatically when done.</h2>
+    <h4 class="<%= source_loading_class(@source) %>">Synchronization in progress, please wait. The page will refresh automatically when done.</h4>
     <span class="pull-right">
       <%= link_to accept_all_source_incomming_localizations_path(@source), :class=>"btn btn-success btn-sm", :data=>{:confirm=>t('lit.common.you_sure', :default=>"Are you sure?")} do %>
         <%= I18n.t('lit.common.accept_all', :default=>"Accept all") %>
@@ -25,8 +25,8 @@
   <% @incomming_localizations.each do |il| %>
     <tr data-id="<%= il.id %>">
       <td colspan="3">
-        <%= image_tag EmojiFlag.new(il.locale_str) %>
-        <strong><%= il.full_key %></strong>
+        <%= EmojiFlag.new(il.locale_str) %>
+        <strong><%= il.localization_key_str %></strong>
       </td>
     </tr>
     <tr data-id="<%= il.id %>">

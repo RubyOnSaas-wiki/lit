@@ -70,9 +70,10 @@ module Lit
     end
 
     def assign_new_localization_key
-      self.localization_key =
-        Lit::LocalizationKey.where(localization_key: localization_key_str, is_deleted: localization_key_is_deleted)
-          .first_or_create!
+      self.localization_key = Lit::LocalizationKey.find_or_create_by_localization_key(localization_key_str)
+      if localization_key.is_deleted != localization_key_is_deleted
+        localization_key.update!(is_deleted: localization_key_is_deleted)
+      end
     end
 
     def assign_new_localization

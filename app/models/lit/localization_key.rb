@@ -22,7 +22,7 @@ module Lit
     ## VALIDATIONS
     validates :localization_key,
               presence: true,
-              uniqueness: { if: :localization_key_changed? }
+              uniqueness: true
 
     ## ACCESSORS
     unless defined?(::ActionController::StrongParameters)
@@ -32,6 +32,14 @@ module Lit
     ## BEFORE AND AFTER
     after_commit :check_completed, on: :update
     after_commit :remove_from_cache, on: :destroy
+
+    def self.find_or_create_by_localization_key(localization_key)
+      find_or_create_by(localization_key: localization_key) do |lk|
+        lk.localization_key = localization_key
+      end
+    rescue ActiveRecord::RecordNotUnique
+      find_by(localization_key: localization_key)
+    end
 
     def to_s
       localization_key
