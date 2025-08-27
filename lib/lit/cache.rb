@@ -82,6 +82,13 @@ module Lit
     def update_locale(key, value, force_array = false, startup_process = false)
       key = key.to_s
       locale_key, key_without_locale = split_key(key)
+      
+      if startup_process && !value.nil?
+        localizations[key] = value
+        localization_cache[key] = value
+        return value
+      end
+      
       locale = find_locale(locale_key)
       localization = find_localization(locale, key_without_locale, value: value, force_array: force_array, update_value: true)
       return localization.translation if startup_process && localization.is_changed?
@@ -258,36 +265,42 @@ module Lit
     def find_localization(locale, key_without_locale, value: nil, force_array: false, update_value: false, default_fallback: false)
       return nil if value.is_a?(Hash)
       full_key = "#{locale}.#{key_without_locale}"
-      ActiveRecord::Base.transaction do
-        localization_key = find_localization_key(key_without_locale)
-        localization = @localization_object_cache[full_key]
-        localization ||=
-          Lit::Localization.where(locale_id: locale.id)
-                           .where(localization_key_id: localization_key.id)
-                           .first_or_initialize
-        if update_value || localization.new_record?
-          if value.is_a?(Array)
-            value = parse_array_value(value, locale) unless force_array
-          elsif !value.nil?
-            value = parse_value(value, locale)
-          else
-            if ::Rails.application.config.i18n.fallbacks
-              value = fallback_localization(locale, key_without_locale)
-            elsif default_fallback
-              value = fallback_to_default(localization_key, localization)
+      
+      localization = @localization_object_cache[full_key]
+      
+      # Only do database operations if we need to update or create
+      if update_value || localization.nil?
+        ActiveRecord::Base.transaction do
+          localization_key = find_localization_key(key_without_locale)
+          localization ||=
+            Lit::Localization.where(locale_id: locale.id)
+                             .where(localization_key_id: localization_key.id)
+                             .first_or_initialize
+          if update_value || localization.new_record?
+            if value.is_a?(Array)
+              value = parse_array_value(value, locale) unless force_array
+            elsif !value.nil?
+              value = parse_value(value, locale)
+            else
+              if ::Rails.application.config.i18n.fallbacks
+                value = fallback_localization(locale, key_without_locale)
+              elsif default_fallback
+                value = fallback_to_default(localization_key, localization)
+              end
             end
+            # Prevent overwriting existing default value with nil.
+            # However, if the localization record is #new_record?, we still need
+            # to insert it with an empty default value.
+            localization.locale = locale
+            localization.localization_key = localization_key
+            localization.full_key_str = full_key
+            localization.update_default_value(value) if localization.new_record? || value
+            @localization_object_cache[full_key] = localization
           end
-          # Prevent overwriting existing default value with nil.
-          # However, if the localization record is #new_record?, we still need
-          # to insert it with an empty default value.
-          localization.locale = locale
-          localization.localization_key = localization_key
-          localization.full_key_str = full_key
-          localization.update_default_value(value) if localization.new_record? || value
-          @localization_object_cache[full_key] = localization
         end
-        localization
       end
+      
+      localization
     end
 
     # fallback to translation in different locale
