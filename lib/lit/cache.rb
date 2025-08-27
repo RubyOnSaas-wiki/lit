@@ -108,12 +108,14 @@ module Lit
     end
 
     def load_all_translations
-      first = Localization.active.order(id: :asc).first
-      last = Localization.active.order(id: :desc).first
-      if !first || (!localizations.has_key?(first.full_key) ||
-        !localizations.has_key?(last.full_key))
-        Localization.includes(%i[locale localization_key]).active.find_each do |l|
-          localizations[l.full_key] = l.translation
+      Thread.new do
+        first = Localization.active.order(id: :asc).first
+        last = Localization.active.order(id: :desc).first
+        if !first || (!localizations.has_key?(first.full_key) ||
+          !localizations.has_key?(last.full_key))
+          Localization.includes(%i[locale localization_key]).active.find_each do |l|
+            localizations[l.full_key] = l.translation
+          end
         end
       end
     end
