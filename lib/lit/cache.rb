@@ -109,13 +109,49 @@ module Lit
 
     def load_all_translations
       Thread.new do
-        first = Localization.active.order(id: :asc).first
-        last = Localization.active.order(id: :desc).first
-        if !first || (!localizations.has_key?(first.full_key) ||
-          !localizations.has_key?(last.full_key))
-          Localization.includes(%i[locale localization_key]).active.find_each do |l|
-            localizations[l.full_key] = l.translation
+        begin
+          Timeout::timeout(30) do
+            ActiveRecord::Base.connection_pool.with_connection do
+              first = Localization.active.order(id: :asc).first
+              last = Localization.active.order(id: :desc).first
+              if !first || (!localizations.has_key?(first.full_key) ||
+                !localizations.has_key?(last.full_key))
+                
+                total_count = Localization.active.count
+                processed = 0
+                
+                lit_logger.info 'Loading Lit translations in batches...'
+                
+                Localization.includes(%i[locale localization_key])
+                            .active
+                            .find_in_batches(batch_size: 500) do |batch|
+                  batch.each do |l|
+                    localizations[l.full_key] = l.translation
+                    processed += 1
+                  end
+                  
+                  if processed % 1000 == 0
+                    lit_logger.info "Lit cache loading progress: #{processed}/#{total_count} translations loaded"
+                  end
+                end
+                
+                lit_logger.info "Lit translations loaded successfully: #{processed} translations"
+              else
+                lit_logger.info 'Lit cache already loaded, skipping background loading'
+              end
+            end
           end
+        rescue Timeout::Error
+          lit_logger.warn "Lit cache loading timed out in background thread after 30 seconds"
+        rescue ActiveRecord::ConnectionTimeoutError => e
+          lit_logger.error "Database connection timeout during Lit cache loading: #{e.message}"
+        rescue ActiveRecord::StatementTimeout => e
+          lit_logger.error "Database query timeout during Lit cache loading: #{e.message}"
+        rescue => e
+          lit_logger.error "Error loading Lit cache in background: #{e.class} - #{e.message}"
+          lit_logger.error e.backtrace.first(20).join("\n")
+        ensure
+          lit_logger.info "Lit background cache loading completed"
         end
       end
     end
@@ -206,6 +242,10 @@ module Lit
     end
 
     private
+
+    def lit_logger
+      @lit_logger ||= Lit.loader&.logger || Logger.new($stdout)
+    end
 
     def localizations
       @localizations ||= Lit.get_key_value_engine
