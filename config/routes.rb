@@ -52,6 +52,7 @@ Lit::Engine.routes.draw do
   end
 
   resource :cloud_translation, only: :show
+  resources :duplicates, only: :index
 
   root to: 'dashboard#index'
 end

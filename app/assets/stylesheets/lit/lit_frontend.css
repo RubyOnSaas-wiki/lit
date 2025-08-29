@@ -85,3 +85,129 @@
 .lit-translations-info.expanded #lit_textarea {
   padding: 2px;
 }
+
+.lit-duplicates {
+  padding: 20px;
+}
+
+.lit-duplicates h1 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.lit-duplicate-group {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  padding: 15px;
+}
+
+.lit-duplicate-group h3 {
+  color: #666;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.lit-duplicate-keys {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.lit-duplicate-keys th,
+.lit-duplicate-keys td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.lit-duplicate-keys th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.lit-duplicate-keys tr:hover {
+  background-color: #f0f0f0;
+}
+
+.lit-duplicates-summary {
+  background: #e8f4fd;
+  border: 1px solid #b3d9ff;
+  border-radius: 5px;
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.lit-no-duplicates {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 5px;
+  padding: 20px;
+  text-align: center;
+  color: #155724;
+}
+
+.lit-duplicates-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.lit-dashboard-actions {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 5px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 3px;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #337ab7;
+  border-color: #2e6da4;
+}
+
+.btn-warning {
+  color: #fff;
+  background-color: #f0ad4e;
+  border-color: #eea236;
+}
+
+.btn-info {
+  color: #fff;
+  background-color: #5bc0de;
+  border-color: #46b8da;
+}
+
+.btn-default {
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}

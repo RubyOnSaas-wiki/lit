@@ -2,4 +2,3 @@
 <% @locales.each do |l| %>
   <strong><%= EmojiFlag.new(l.locale) %> <%= I18n.t("lit.locale_to_languages.#{l.locale}", :default=>l.locale) %>:</strong> <span title="<%= "#{l.changed_localizations_count}/#{l.all_localizations_count}" %>"><%= l.translated_percentage %>%</span><br/>
 <% end %>
-

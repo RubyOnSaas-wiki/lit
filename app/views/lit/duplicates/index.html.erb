@@ -1,0 +1,41 @@
+<div class="lit-duplicates">
+  <h1>Duplicate Localization Keys (English Translations)</h1>
+  
+  <% if @duplicates.any? %>
+    <div class="lit-duplicates-list">
+      <% @duplicates.each do |translation, localization_keys| %>
+        <div class="lit-duplicate-group">
+          <h3>English Translation: "<%= translation.present? ? translation : '[empty]' %>"</h3>
+          <p>Found in <%= localization_keys.length %> keys:</p>
+          
+          <table class="lit-duplicate-keys">
+            <thead>
+              <tr>
+                <th>Localization Key</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% localization_keys.each do |localization_key| %>
+                <tr>
+                  <td><%= localization_key %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+    
+    <div class="lit-duplicates-summary">
+      <p><strong>Total duplicate groups: <%= @duplicates.length %></strong></p>
+    </div>
+  <% else %>
+    <div class="lit-no-duplicates">
+      <p>No duplicate translations found!</p>
+    </div>
+  <% end %>
+  
+  <div class="lit-duplicates-actions">
+    <%= link_to 'Back to Dashboard', lit.root_path, class: 'btn btn-default' %>
+  </div>
+</div>
