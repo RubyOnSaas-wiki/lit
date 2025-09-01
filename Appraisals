@@ -60,3 +60,26 @@ appraise 'rails-6.1' do
   gem 'm', '~> 1.5.0'
   gem 'google-cloud-translate', '~> 2.1.2'
 end
+
+appraise 'rails-7.2' do
+  source 'https://rubygems.org'
+  gem 'rails', '~> 7.2.2'
+  gem 'devise'
+  gem 'pg', '~> 1.5.0'
+  gem 'redis'
+  gem 'capybara'
+  gem 'database_cleaner-active_record'
+  gem 'test_declarative'
+  gem 'mocha'
+  gem 'webmock'
+  gem 'sprockets-rails'
+  gem 'importmap-rails'
+  gem 'turbo-rails'
+  gem 'stimulus-rails'
+  gem 'jbuilder'
+  gem 'pry-rails'
+  gem 'rails-controller-testing'
+  gem 'minitest'
+  gem 'm', '~> 1.5.0'
+  gem 'google-cloud-translate', '~> 2.1.2'
+end
