@@ -42,7 +42,7 @@ module Lit
       else
         value = localization_cache[key]
       end
-      update_hits_count(key) if @hits_counter_working
+      update_hits_tracker(key) if @hits_counter_working
 
       if Lit.store_request_info ||
          Lit.store_request_keys
@@ -408,12 +408,13 @@ module Lit
       localization_key
     end
 
-    def update_hits_count(key)
+    def update_hits_tracker(key)
       return unless @hits_counter_working
 
       key_without_locale = split_key(key).last
-      @hits_counter.incr('hits_counter.' + key)
-      @hits_counter.incr('global_hits_counter.' + key_without_locale)
+      @hits_counter['hits_tracker.' + key_without_locale] = true
+      # @hits_counter.incr('hits_counter.' + key)
+      # @hits_counter.incr('global_hits_counter.' + key_without_locale)
     end
 
     def store_request_info(key_without_locale)

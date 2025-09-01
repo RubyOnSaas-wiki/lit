@@ -7,7 +7,12 @@
       <td>
         <strong><%= lk.localization_key %></strong>
         <i class="fa fa-clipboard js-copy_to_clipboard copy_to_clipboard_btn " data-key="<%= lk.localization_key %>"></i>
-        <span class="badge"><%= Lit.init.cache.get_global_hits_counter(lk.localization_key) %></span>
+        <span class="badge">
+          <% if lk.last_visited_at %>
+            (Last visited - <%= lk.last_visited_at %>)
+          <% end %>
+          <%#= Lit.init.cache.get_global_hits_counter(lk.localization_key) %>
+        </span>
         <div class="localization_keys_options">
           <% if Lit.store_request_info %>
             <%= link_to '#', class: 'request_info_link title',  title: 'Show / hide request' do %>
