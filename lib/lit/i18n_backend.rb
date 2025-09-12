@@ -1,4 +1,5 @@
 require 'i18n'
+require 'yaml'
 require 'lit/services/humanize_service'
 
 module Lit
@@ -64,6 +65,211 @@ module Lit
       ActiveRecord::Base.transaction do
         store_item(locale, data)
       end if store_items? && valid_locale?(locale)
+    end
+
+    def init_translations_with_caching
+      without_store_items { load_translations }
+      @cache.load_all_translations
+      
+      load_yaml_translations_in_batches
+    end
+
+    def load_yaml_translations_in_batches
+      return if @translations.nil? || @translations.empty?
+      
+      begin
+        new_translations = scan_for_new_yaml_translations
+      rescue => e
+        @cache.lit_logger.error "Failed to scan for new YAML translations: #{e.message}"
+        @cache.lit_logger.error e.backtrace.join("\n") if Rails.env.development?
+        new_translations = []
+      end
+      
+      all_translations = []
+      begin
+        @translations.each do |locale, data|
+          next unless valid_locale?(locale)
+          flatten_translations_for_batching(locale, data, [], all_translations)
+        end
+      rescue => e
+        @cache.lit_logger.error "Failed to flatten translations: #{e.message}"
+        @cache.lit_logger.error e.backtrace.join("\n") if Rails.env.development?
+        return
+      end
+      
+      if new_translations.any?
+        store_new_translations_with_store_item(new_translations)
+        
+        new_translations.each do |translation|
+          all_translations << [
+            translation[:locale],
+            translation[:key],
+            translation[:value],
+            translation[:is_array]
+          ]
+        end
+      end
+      
+      return if all_translations.empty?
+      
+      batch_size = 1000
+      total_batches = (all_translations.length / batch_size.to_f).ceil
+
+      @cache.lit_logger.info "Loading #{all_translations.length} YAML translations in #{total_batches} batches (batch size: #{batch_size})"
+      @cache.lit_logger.info "Found #{new_translations.length} new translations not in database" if new_translations.any?
+      
+      Thread.current[:lit_cache_keys] = @cache.keys
+      
+      begin
+        all_translations.each_slice(batch_size).with_index do |batch, batch_index|
+          batch_num = batch_index + 1
+          @cache.lit_logger.info "Processing YAML batch #{batch_num}/#{total_batches} (#{batch.length} translations)"
+          
+          begin
+            ActiveRecord::Base.transaction do
+              batch.each do |locale, key, value, is_array|
+                @cache.update_locale("#{locale}.#{key}", value, is_array, true)
+              end
+            end
+          rescue => e
+            @cache.lit_logger.error "Failed to process YAML batch #{batch_num}: #{e.message}"
+            @cache.lit_logger.error e.backtrace.join("\n") if Rails.env.development?
+            next
+          end
+        end
+      ensure
+        Thread.current[:lit_cache_keys] = nil
+      end
+      
+      @cache.lit_logger.info "Completed loading all YAML translations into cache"
+    end
+
+    def scan_for_new_yaml_translations
+      new_translations = []
+      
+      yaml_files = I18n.load_path.select { |path| path.end_with?('.yml') || path.end_with?('.yaml') }
+      
+      @cache.lit_logger.info "Scanning #{yaml_files.length} YAML files for new translations"
+      
+      yaml_files.each do |file_path|
+        next unless File.exist?(file_path)
+        
+        begin
+          yaml_content = YAML.load_file(file_path, aliases: true)
+        rescue => e
+          begin
+            yaml_content = YAML.load_file(file_path)
+          rescue => e2
+            @cache.lit_logger.warn "Failed to scan YAML file #{file_path}: #{e2.message}"
+            next
+          end
+        end
+        
+        next unless yaml_content.is_a?(Hash)
+        
+        yaml_content.each do |locale, translations|
+          next unless valid_locale?(locale)
+          
+          begin
+            flattened = flatten_yaml_translations(translations)
+            flattened.each do |key, value|
+              unless translation_exists_in_database?(locale, key)
+                new_translations << {
+                  file: file_path,
+                  locale: locale,
+                  key: key,
+                  value: value,
+                  is_array: value.is_a?(Array)
+                }
+              end
+            end
+          rescue => e
+            @cache.lit_logger.warn "Failed to process translations in #{file_path} for locale #{locale}: #{e.message}"
+            next
+          end
+        end
+      end
+      
+      new_translations
+    end
+
+    def store_new_translations_with_store_item(new_translations)
+      return if new_translations.empty?
+      
+      @cache.lit_logger.info "Storing #{new_translations.length} new translations using store_item method"
+      
+      batch_size = 500
+      new_translations.each_slice(batch_size).with_index do |batch, batch_index|
+        batch_num = batch_index + 1
+        total_batches = (new_translations.length / batch_size.to_f).ceil
+        
+        @cache.lit_logger.info "Storing new translations batch #{batch_num}/#{total_batches} (#{batch.length} translations)"
+        
+        begin
+          ActiveRecord::Base.transaction do
+            batch.each do |translation|
+              locale = translation[:locale]
+              key = translation[:key]
+              value = translation[:value]
+              
+              store_item(locale, { key => value }, [], false)
+            end
+          end
+        rescue => e
+          @cache.lit_logger.error "Failed to store new translations batch #{batch_num}: #{e.message}"
+          @cache.lit_logger.error e.backtrace.join("\n") if Rails.env.development?
+          next
+        end
+      end
+      
+      @cache.lit_logger.info "Completed storing new translations"
+    end
+
+    def translation_exists_in_database?(locale, key)
+      localization_key = Lit::LocalizationKey.find_by(localization_key: key)
+      return false unless localization_key
+      
+      Lit::Localization.exists?(
+        localization_key: localization_key,
+        locale: Lit::Locale.find_by(locale: locale)
+      )
+    end
+
+    def flatten_yaml_translations(translations, prefix = '')
+      result = {}
+      
+      translations.each do |key, value|
+        full_key = prefix.empty? ? key.to_s : "#{prefix}.#{key}"
+        
+        if value.is_a?(Hash)
+          result.merge!(flatten_yaml_translations(value, full_key))
+        else
+          result[full_key] = value
+        end
+      end
+      
+      result
+    end
+
+    def flatten_translations_for_batching(locale, data, scope, result)
+      if data.respond_to?(:to_hash)
+        data.to_hash.each do |k, value|
+          flatten_translations_for_batching(locale, value, scope + [k], result)
+        end
+      elsif data.respond_to?(:to_str) || data.is_a?(Array)
+        key = scope.join('.')
+        result << [locale, key, data, data.is_a?(Array)]
+      end
+    end
+
+    def load_translations_to_cache
+      Thread.current[:lit_cache_keys] = @cache.keys
+      ActiveRecord::Base.transaction do
+        (@translations || {}).each do |locale, data|
+          store_item(locale, data, [], true) if valid_locale?(locale)
+        end
+      end
+      Thread.current[:lit_cache_keys] = nil
     end
 
     private
@@ -175,16 +381,6 @@ module Lit
       end
     end
 
-    def load_translations_to_cache
-      Thread.current[:lit_cache_keys] = @cache.keys
-      ActiveRecord::Base.transaction do
-        (@translations || {}).each do |locale, data|
-          store_item(locale, data, [], true) if valid_locale?(locale)
-        end
-      end
-      Thread.current[:lit_cache_keys] = nil
-    end
-
     def init_translations
       # Load all translations from *.yml, *.rb files to @translations variable.
       # We don't want to store translations in lit cache just yet. We'll do it
@@ -193,8 +389,8 @@ module Lit
       without_store_items { load_translations }
       # load translations from database to cache
       @cache.load_all_translations
-      # load translations from @translations to cache
-      load_translations_to_cache unless Lit.ignore_yaml_on_startup
+      # load translations from @translations to cache in batches
+      load_yaml_translations_in_batches unless Lit.ignore_yaml_on_startup
       @initialized = true
     end
 
