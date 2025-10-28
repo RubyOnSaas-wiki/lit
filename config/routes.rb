@@ -53,6 +53,9 @@ Lit::Engine.routes.draw do
 
   resource :cloud_translation, only: :show
   resources :duplicates, only: :index
+  resources :exports, only: [:index] do
+    get :export, on: :collection
+  end
 
   root to: 'dashboard#index'
 end
