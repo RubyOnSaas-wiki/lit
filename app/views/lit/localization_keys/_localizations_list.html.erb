@@ -1,12 +1,12 @@
 <div class="col-12 text-right">
-  <%= link_to "batch touch", lit.batch_touch_localization_keys_path(key: params[:key], key_prefix: params[:key_prefix]), method: :post, remote: true, class: 'btn btn-sm btn-primary', data: { confirm: 'This will "touch" all search results making them subject of synchronization. Proceed?'} %>
+  <%= link_to "batch touch", lit.batch_touch_localization_keys_path(key: params[:key], key_prefix: params[:key_prefix]), method: :post, remote: true, class: 'button button-sm button-primary', data: { confirm: 'This will "touch" all search results making them subject of synchronization. Proceed?'} %>
 </div>
 <table class="table mt-1">
   <%- @localization_keys.each do |lk| %>
     <tr class="localization_key_row" data-id="<%= lk.id %>">
       <td>
         <strong><%= lk.localization_key %></strong>
-        <i class="fa fa-clipboard js-copy_to_clipboard copy_to_clipboard_btn " data-key="<%= lk.localization_key %>"></i>
+        <i class="fa fa-clipboard js-copy_to_clipboard copy_to_clipboard_button " data-key="<%= lk.localization_key %>"></i>
         <% if lk.last_visited_at %>
           <span class="badge">
             (Last visited - <%= lk.last_visited_at %>)

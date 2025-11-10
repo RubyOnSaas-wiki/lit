@@ -60,6 +60,6 @@ i.fa {
 .loaded {
   display: none;
 }
-.copy_to_clipboard_btn {
+.copy_to_clipboard_button {
   cursor: pointer;
 }

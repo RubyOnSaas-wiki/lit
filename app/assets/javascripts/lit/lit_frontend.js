@@ -2,7 +2,7 @@
 "use strict";
 
 (function() {
-  var $btn, $elem;
+  var $button, $elem;
   var buildLocalizationForm, getLocalizationPath, getLocalizationDetails,
     replaceWithForm, submitForm, removeLitForm;
 
@@ -79,19 +79,19 @@
 
   $(document).ready(function(){
     $('<div id="lit_button_wrapper" />').appendTo('body');
-    $btn = $('#lit_button_wrapper').text('Enable / disable lit highlight');
-    $btn.on('click', function(){
+    $button = $('#lit_button_wrapper').text('Enable / disable lit highlight');
+    $button.on('click', function(){
       removeLitForm();
-      if($btn.hasClass('lit-highlight-enabled')){
+      if($button.hasClass('lit-highlight-enabled')){
         $('.lit-key-generic').removeClass('lit-key-highlight').off('click.lit');
-        $btn.removeClass('lit-highlight-enabled');
+        $button.removeClass('lit-highlight-enabled');
         $('.lit-key-generic').each(function(_, elem){
           $elem = $(elem);
           $elem.attr('title', $elem.data('old-title') || '');
         });
       }else{
         $('.lit-key-generic').addClass('lit-key-highlight').on('click.lit', buildLocalizationForm);
-        $btn.addClass('lit-highlight-enabled');
+        $button.addClass('lit-highlight-enabled');
         $('.lit-key-generic').each(function(_, elem){
           $elem = $(elem);
           $elem.data('old-title', $elem.attr('title'));
