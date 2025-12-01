@@ -2,7 +2,8 @@
 
 require_relative 'base'
 begin
-  require 'google/cloud/translate'
+  require 'google/cloud/translate/v3'
+  require 'googleauth'
 rescue LoadError
   raise StandardError, 'You need to add "gem \'google-cloud-translate\'" to your Gemfile to support Google Cloud Translation'
 end
@@ -45,19 +46,20 @@ module Lit::CloudTranslation::Providers
   #   end
   class Google < Base
     def translate(text:, from: nil, to:, **opts)
-      result = client.translate(sanitize_text(text), from: from, to: to, **opts)
-      unsanitize_text(
-        case result
-        when translation_class then result.text
-        when Array then result.map(&:text)
-        end
-      )
-    rescue Signet::AuthorizationError => e
-      error_description =
-        'Google credentials error: ' + # rubocop:disable Style/RescueModifier
-        JSON.parse(e.response.body)['error_description'] rescue 'Unknown error'
-      raise ::Lit::CloudTranslation::TranslationError, error_description,
-            cause: e
+      text_array = Array(sanitize_text(text))
+      parent = "projects/#{config.keyfile_hash['project_id']}/locations/global"
+      
+      request = {
+        parent: parent,
+        contents: text_array,
+        target_language_code: to.to_s
+      }
+      request[:source_language_code] = from.to_s if from
+      
+      response = client.translate_text(request)
+      
+      translations = response.translations.map(&:translated_text)
+      unsanitize_text(text.is_a?(Array) ? translations : translations.first)
     rescue ::Google::Cloud::Error => e
       raise ::Lit::CloudTranslation::TranslationError, e.message, cause: e
     end
@@ -66,22 +68,10 @@ module Lit::CloudTranslation::Providers
 
     def client
       @client ||= begin
-        args = {
-          project_id: config.keyfile_hash['project_id'], credentials: config.keyfile_hash,
-          version: :v2
-        }
-        if Gem.loaded_specs['google-cloud-translate'].version < Gem::Version.create('2.0')
-          args = args.tap { |hs| hs.delete(:version) }
+        credentials = ::Google::Auth::Credentials.new(config.keyfile_hash)
+        ::Google::Cloud::Translate::V3::TranslationService::Client.new do |client_config|
+          client_config.credentials = credentials
         end
-        ::Google::Cloud::Translate.new(**args)
-      end
-    end
-
-    def translation_class
-      if Gem.loaded_specs['google-cloud-translate'].version < Gem::Version.create('2.0')
-        ::Google::Cloud::Translate::Translation
-      else
-        ::Google::Cloud::Translate::V2::Translation
       end
     end
 
