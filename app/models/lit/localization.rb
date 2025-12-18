@@ -68,6 +68,7 @@ module Lit
 
     def update_default_value(value)
       return true if persisted? && default_value == value
+      return true if persisted? && is_changed?
       if persisted?
         update(default_value: value)
       else

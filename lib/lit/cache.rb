@@ -83,15 +83,20 @@ module Lit
       key = key.to_s
       locale_key, key_without_locale = split_key(key)
       
-      if startup_process && !value.nil?
+      locale = find_locale(locale_key)
+      localization = find_localization(locale, key_without_locale, value: value, force_array: force_array, update_value: true)
+      
+      if startup_process && localization && localization.persisted?
+        localizations[key] = localization.translation
+        localization_cache[key] = localization.translation
+        return localization.translation
+      end
+      
+      if startup_process && !value.nil? && localization && !localization.persisted?
         localizations[key] = value
         localization_cache[key] = value
         return value
       end
-      
-      locale = find_locale(locale_key)
-      localization = find_localization(locale, key_without_locale, value: value, force_array: force_array, update_value: true)
-      return localization.translation if startup_process && localization.is_changed?
 
       localizations[key] = localization.translation if localization
       localization_cache[key] = localizations[key]
@@ -288,7 +293,11 @@ module Lit
             localization.locale = locale
             localization.localization_key = localization_key
             localization.full_key_str = full_key
-            localization.update_default_value(value) if localization.new_record? || value
+            # Only update default_value for new records - never update existing translations
+            # Existing translations can only be updated manually by the user
+            if localization.new_record?
+              localization.update_default_value(value)
+            end
             @localization_object_cache[full_key] = localization
           end
         end

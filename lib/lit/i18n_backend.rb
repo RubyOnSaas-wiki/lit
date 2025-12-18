@@ -1,5 +1,6 @@
 require 'i18n'
 require 'yaml'
+require 'set'
 require 'lit/services/humanize_service'
 
 module Lit
@@ -85,6 +86,11 @@ module Lit
         new_translations = []
       end
       
+      new_translation_keys = Set.new
+      new_translations.each do |translation|
+        new_translation_keys.add("#{translation[:locale]}.#{translation[:key]}")
+      end
+      
       all_translations = []
       begin
         @translations.each do |locale, data|
@@ -99,29 +105,44 @@ module Lit
       
       if new_translations.any?
         store_new_translations_with_store_item(new_translations)
-        
-        new_translations.each do |translation|
-          all_translations << [
-            translation[:locale],
-            translation[:key],
-            translation[:value],
-            translation[:is_array]
-          ]
-        end
       end
       
-      return if all_translations.empty?
+      translations_to_process = []
+      processed_keys = Set.new
+      skipped_count = 0
+      
+      all_translations.each do |locale, key, value, is_array|
+        full_key = "#{locale}.#{key}"
+        
+        next if processed_keys.include?(full_key)
+        processed_keys.add(full_key)
+        
+        if new_translation_keys.include?(full_key)
+          translations_to_process << [locale, key, value, is_array]
+          next
+        end
+
+        if translation_exists_in_database?(locale, key)
+          skipped_count += 1
+          next
+        end
+        
+        translations_to_process << [locale, key, value, is_array]
+      end
+      
+      return if translations_to_process.empty?
       
       batch_size = 1000
-      total_batches = (all_translations.length / batch_size.to_f).ceil
+      total_batches = (translations_to_process.length / batch_size.to_f).ceil
 
-      @cache.lit_logger.info "Loading #{all_translations.length} YAML translations in #{total_batches} batches (batch size: #{batch_size})"
+      @cache.lit_logger.info "Loading #{translations_to_process.length} YAML translations in #{total_batches} batches (batch size: #{batch_size})"
       @cache.lit_logger.info "Found #{new_translations.length} new translations not in database" if new_translations.any?
+      @cache.lit_logger.info "Skipped #{skipped_count} existing translations (only new translations are created, existing ones are never updated)" if skipped_count > 0
       
       Thread.current[:lit_cache_keys] = @cache.keys
       
       begin
-        all_translations.each_slice(batch_size).with_index do |batch, batch_index|
+        translations_to_process.each_slice(batch_size).with_index do |batch, batch_index|
           batch_num = batch_index + 1
           @cache.lit_logger.info "Processing YAML batch #{batch_num}/#{total_batches} (#{batch.length} translations)"
           
@@ -260,6 +281,23 @@ module Lit
         key = scope.join('.')
         result << [locale, key, data, data.is_a?(Array)]
       end
+    end
+
+    def values_equal?(value1, value2)
+      # Handle nil cases
+      return true if value1.nil? && value2.nil?
+      return false if value1.nil? || value2.nil?
+      
+      # Both are arrays - compare arrays
+      if value1.is_a?(Array) && value2.is_a?(Array)
+        return value1 == value2
+      end
+      
+      # One is array, one is not - not equal
+      return false if value1.is_a?(Array) || value2.is_a?(Array)
+      
+      # Both are strings or can be compared directly
+      value1.to_s == value2.to_s
     end
 
     def load_translations_to_cache
