@@ -63,9 +63,23 @@ module Lit
     # @param [Hash] data nested key-value pairs to be added as blurbs
     def store_translations(locale, data, options = {})
       super
-      ActiveRecord::Base.transaction do
-        store_item(locale, data)
-      end if store_items? && valid_locale?(locale)
+      # Only store translations if:
+      # 1. store_items is enabled
+      # 2. locale is valid
+      # 3. filename indicates it's from app locale files (not gems)
+      return unless store_items? && valid_locale?(locale)
+
+      # Check if this is from an app locale file - options[:filename] is set by I18n
+      filename = options[:filename].to_s
+      app_locales_path = Rails.root.join('config', 'locales').to_s
+
+      # Only store if filename is from app locales or if no filename (runtime store)
+      # Runtime stores without filename are typically from app code using I18n.backend.store_translations
+      if filename.empty? || filename.start_with?(app_locales_path)
+        ActiveRecord::Base.transaction do
+          store_item(locale, data)
+        end
+      end
     end
 
     def init_translations_with_caching
@@ -122,12 +136,8 @@ module Lit
           next
         end
 
-        if translation_exists_in_database?(locale, key)
-          skipped_count += 1
-          next
-        end
-        
-        translations_to_process << [locale, key, value, is_array]
+        # Skip if not a new app translation - it's either existing or from a gem
+        skipped_count += 1
       end
       
       return if translations_to_process.empty?
@@ -167,14 +177,26 @@ module Lit
 
     def scan_for_new_yaml_translations
       new_translations = []
-      
-      yaml_files = I18n.load_path.select { |path| path.end_with?('.yml') || path.end_with?('.yaml') }
-      
+
+      # Only scan app translation files, not gems
+      app_locales_path = Rails.root.join('config', 'locales').to_s
+      yaml_files = I18n.load_path.select do |path|
+        (path.end_with?('.yml') || path.end_with?('.yaml')) && path.start_with?(app_locales_path)
+      end
+
       @cache.lit_logger.info "Scanning #{yaml_files.length} YAML files for new translations"
-      
+
+      # Pre-load existing keys from database for faster lookup
+      existing_keys = Set.new
+      Lit::LocalizationKey.pluck(:localization_key).each do |key|
+        Lit::Locale.pluck(:locale).each do |locale|
+          existing_keys.add("#{locale}.#{key}")
+        end
+      end
+
       yaml_files.each do |file_path|
         next unless File.exist?(file_path)
-        
+
         begin
           yaml_content = YAML.load_file(file_path, aliases: true)
         rescue => e
@@ -185,24 +207,28 @@ module Lit
             next
           end
         end
-        
+
         next unless yaml_content.is_a?(Hash)
-        
+
         yaml_content.each do |locale, translations|
           next unless valid_locale?(locale)
-          
+
           begin
             flattened = flatten_yaml_translations(translations)
             flattened.each do |key, value|
-              unless translation_exists_in_database?(locale, key)
-                new_translations << {
-                  file: file_path,
-                  locale: locale,
-                  key: key,
-                  value: value,
-                  is_array: value.is_a?(Array)
-                }
-              end
+              full_key = "#{locale}.#{key}"
+              # Skip ignored keys (gem prefixes)
+              next if is_ignored_key(key)
+              # Skip if already in database
+              next if existing_keys.include?(full_key)
+
+              new_translations << {
+                file: file_path,
+                locale: locale,
+                key: key,
+                value: value,
+                is_array: value.is_a?(Array)
+              }
             end
           rescue => e
             @cache.lit_logger.warn "Failed to process translations in #{file_path} for locale #{locale}: #{e.message}"
@@ -210,7 +236,7 @@ module Lit
           end
         end
       end
-      
+
       new_translations
     end
 
@@ -244,16 +270,6 @@ module Lit
       end
       
       @cache.lit_logger.info "Completed storing new translations"
-    end
-
-    def translation_exists_in_database?(locale, key)
-      localization_key = Lit::LocalizationKey.find_by(localization_key: key)
-      return false unless localization_key
-      
-      Lit::Localization.exists?(
-        localization_key: localization_key,
-        locale: Lit::Locale.find_by(locale: locale)
-      )
     end
 
     def flatten_yaml_translations(translations, prefix = '')
@@ -410,6 +426,9 @@ module Lit
         # end
       elsif data.respond_to?(:to_str) || data.is_a?(Array)
         key = ([locale] + scope).join('.')
+        key_without_locale = scope.join('.')
+        # Skip ignored keys (gem translations, etc.)
+        return if is_ignored_key(key_without_locale)
         return if startup_process && Lit.ignore_yaml_on_startup && (Thread.current[:lit_cache_keys] || @cache.keys).member?(key)
         @cache.update_locale(key, data, data.is_a?(Array), startup_process)
       elsif data.nil?

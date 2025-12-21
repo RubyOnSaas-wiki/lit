@@ -35,7 +35,37 @@ Lit.humanize_key = false
 Lit.ignore_yaml_on_startup = true
 
 # Array of ignored keys or key prefixes
-Lit.ignored_keys = ['i18n.transliterate'].freeze
+# Common gem translations are excluded by default to prevent polluting the database
+Lit.ignored_keys = %w[
+  i18n.transliterate
+  faker
+  activerecord
+  activemodel
+  devise
+  ransack
+  grape
+  simple_form
+  formtastic
+  active_admin
+  administrate
+  kaminari
+  will_paginate
+  pagy
+  pundit
+  cancancan
+  rolify
+  doorkeeper
+  omniauth
+  carrierwave
+  paperclip
+  shrine
+  dragonfly
+  sidekiq
+  resque
+  delayed_job
+  action_text
+  action_mailbox
+].freeze
 
 # API enabled? API allows third party browsing your translations, as well as
 # synchronizing them between environments
