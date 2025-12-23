@@ -10,7 +10,7 @@ module Lit
   end
 end
 
-if defined?(Rails::Railtie)
+if defined?(::Rails::Railtie)
   require 'lit/middleware'
   require 'lit/railtie'
 else

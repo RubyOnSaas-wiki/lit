@@ -1,5 +1,5 @@
 module Lit::FrontendHelper
-  include ActionView::Helpers::TranslationHelper
+  include ::ActionView::Helpers::TranslationHelper
 
   module TranslationKeyWrapper
     def translate(key, options = {})
@@ -14,7 +14,7 @@ module Lit::FrontendHelper
     end
 
     def pluralized_key(key, count)
-      pluralizer = I18n.backend.send(:pluralizer, locale)
+      pluralizer = ::I18n.backend.send(:pluralizer, locale)
       return unless pluralizer.respond_to?(:call)
       last = count.zero? ? :zero : pluralizer.call(count)
       format '%<key>s.%<last>s', key: key, last: last
@@ -88,7 +88,7 @@ module Lit::FrontendHelper
   end
 
   def get_translateable_span(key, localization, alternative_text: nil)
-    content_tag :span, class: 'lit-key-generic', data: { key: key, locale: I18n.locale } do
+    content_tag :span, class: 'lit-key-generic', data: { key: key, locale: ::I18n.locale } do
       localization.blank? ? alternative_text : localization
     end
   end

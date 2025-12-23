@@ -1,11 +1,11 @@
 require 'test_helper'
 require 'rake'
 
-class RawImportTaskTest < ActiveSupport::TestCase
+class RawImportTaskTest < ::ActiveSupport::TestCase
   def setup
     path = Lit::Engine.root.join('test', 'fixtures', 'lit', 'files', 'import.yml.raw')
-    @locales = Rails.root.join('config', 'locales', 'import.yml')
-    FileUtils.cp path, @locales
+    @locales = ::Rails.root.join('config', 'locales', 'import.yml')
+    ::FileUtils.cp path, @locales
     Rake::Task.clear
     Lit::Engine.load_tasks
     Rake::Task.define_task(:environment)
@@ -20,7 +20,7 @@ class RawImportTaskTest < ActiveSupport::TestCase
     ENV['FILES'] = @old_files
     ENV['LOCALE'] = @old_locale
     ENV['SKIP_NIL'] = @old_skip_nil
-    FileUtils.rm @locales
+    ::FileUtils.rm @locales
   end
 
   test 'imports locale from selected file and skips nil values' do

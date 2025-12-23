@@ -31,17 +31,17 @@ module Lit::CloudTranslation::Providers
         format: opts[:format],
         options: opts[:options]
       }.compact
-      uri.query = URI.encode_www_form(params)
-      res = Net::HTTP.get_response(uri)
+      uri.query = ::URI.encode_www_form(params)
+      res = ::Net::HTTP.get_response(uri)
 
       unsanitize_text(
         case res
-        when Net::HTTPOK
-          translations = JSON.parse(res.body)['text']
+        when ::Net::HTTPOK
+          translations = ::JSON.parse(res.body)['text']
           translations.size == 1 ? translations.first : translations
         else
           raise ::Lit::CloudTranslation::TranslationError,
-                (JSON.parse(res.body)['message'] rescue "Unknown error: #{res.body}") # rubocop:disable Style/RescueModifier, Metrics/LineLength
+                (::JSON.parse(res.body)['message'] rescue "Unknown error: #{res.body}") # rubocop:disable Style/RescueModifier, Metrics/LineLength
         end
       )
     end

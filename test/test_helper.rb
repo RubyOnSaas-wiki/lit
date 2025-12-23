@@ -7,7 +7,7 @@ ENV['RAILS_ENV'] = 'test'
 # when using `rails test` instead of `rake` is `false`)
 $VERBOSE = false # equivalent to `ruby -W1`
 
-require File.expand_path('../dummy/config/environment.rb',  __FILE__)
+require ::File.expand_path('../dummy/config/environment.rb',  __FILE__)
 require 'rails/test_help'
 require 'capybara/rails'
 require 'database_cleaner'
@@ -19,26 +19,26 @@ require 'minitest-vcr'
 
 begin
   require 'rails-controller-testing'
-  Rails::Controller::Testing.install
+  ::Rails::Controller::Testing.install
 rescue LoadError
 end
 
 WebMock.enable!
 
-Rails.backtrace_cleaner.remove_silencers!
+::Rails.backtrace_cleaner.remove_silencers!
 
 # Load support files
-Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
+Dir["#{::File.dirname(__FILE__)}/support/**/*.rb"].each { |f| require f }
 
 # Helper for adding sample .yml file to load path
 def load_sample_yml(fname)
-  I18n.load_path << "#{File.dirname(__FILE__)}/support/#{fname}"
+  ::I18n.load_path << "#{::File.dirname(__FILE__)}/support/#{fname}"
 end
 
-ActiveSupport::TestCase.fixture_path = File.expand_path('../fixtures', __FILE__)
+ActiveSupport::TestCase.fixture_path = ::File.expand_path('../fixtures', __FILE__)
 
 ## do not enforce available locales
-I18n.config.enforce_available_locales = false
+::I18n.config.enforce_available_locales = false
 
 # Transactional fixtures do not work with Selenium tests, because Capybara
 # uses a separate server thread, which the transactions would be hidden
@@ -47,7 +47,7 @@ DatabaseCleaner.strategy = :truncation
 
 DatabaseCleaner.clean_with :truncation
 
-class ActiveSupport::TestCase
+class ::ActiveSupport::TestCase
   include WebMock::API
 
   if respond_to?(:use_transactional_tests=)
@@ -66,7 +66,7 @@ class ActiveSupport::TestCase
   end
 end
 
-class ActionDispatch::IntegrationTest
+class ::ActionDispatch::IntegrationTest
   # Make the Capybara DSL available in all integration tests
   include Capybara::DSL
 
@@ -79,7 +79,7 @@ class ActionDispatch::IntegrationTest
 
   setup do
     DatabaseCleaner.strategy = :truncation
-    I18n.backend.reload!
+    ::I18n.backend.reload!
     DatabaseCleaner.start
   end
 
@@ -91,7 +91,7 @@ class ActionDispatch::IntegrationTest
   end
 end
 
-class ActionController::TestCase
+class ::ActionController::TestCase
   include Warden::Test::Helpers
   if defined?(Devise::Test::ControllerHelpers)
     include Devise::Test::ControllerHelpers
@@ -121,8 +121,8 @@ end
 MinitestVcr::Spec.configure!
 
 def assert_no_database_queries
-  ActiveRecord::Base.connection.stubs(:execute).
+  ::ActiveRecord::Base.connection.stubs(:execute).
     raises(Minitest::Assertion, 'The block should not make any database calls')
   yield
-  ActiveRecord::Base.connection.unstub(:execute)
+  ::ActiveRecord::Base.connection.unstub(:execute)
 end

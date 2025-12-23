@@ -19,8 +19,8 @@ module Lit
         exported_keys = Lit::Services::LocalizationKeysToHashService.call(db_localizations)
         exported_keys.to_yaml
       when :csv
-        relevant_locales = locale_keys.presence || I18n.available_locales.map(&:to_s)
-        CSV.generate do |csv|
+        relevant_locales = locale_keys.presence || ::I18n.available_locales.map(&:to_s)
+        ::CSV.generate do |csv|
           csv << ['key', *relevant_locales, ('hits' if include_hits_count)].compact
           keys_without_locales = db_localizations.keys.map { |k| k.gsub(/(#{relevant_locales.join('|')})\./, '') }.uniq
           keys_without_locales.each do |key_without_locale|

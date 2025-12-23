@@ -11,10 +11,10 @@ module Lit
     attr_accessor :cache
     attr_accessor :logger
     def initialize
-      self.logger ||= Logger.new($stdout)
+      self.logger ||= ::Logger.new($stdout)
       self.logger.info 'initializing Lit' unless ::Rails.env.test?
       self.cache ||= Cache.new
-      I18n.backend = I18nBackend.new(self.cache)
+      ::I18n.backend = I18nBackend.new(self.cache)
     end
   end
 end

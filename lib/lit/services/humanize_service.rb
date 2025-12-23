@@ -16,12 +16,12 @@ module Lit
 
       def self.humanize_and_cache(key, options)
         content = humanize(key)
-        parts = I18n.normalize_keys(
-          options[:locale] || I18n.locale, key, options[:scope], options[:separator]
+        parts = ::I18n.normalize_keys(
+          options[:locale] || ::I18n.locale, key, options[:scope], options[:separator]
         )
         key_with_locale = parts.join('.')
-        I18n.cache_store[key_with_locale] = content
-        I18n.cache_store[key_with_locale]
+        ::I18n.cache_store[key_with_locale] = content
+        ::I18n.cache_store[key_with_locale]
       end
     end
   end

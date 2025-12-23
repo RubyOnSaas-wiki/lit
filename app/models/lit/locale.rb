@@ -39,8 +39,8 @@ module Lit
     private
 
     def reset_available_locales_cache
-      return unless I18n.backend.respond_to?(:reset_available_locales_cache)
-      I18n.backend.reset_available_locales_cache
+      return unless ::I18n.backend.respond_to?(:reset_available_locales_cache)
+      ::I18n.backend.reset_available_locales_cache
     end
   end
 end

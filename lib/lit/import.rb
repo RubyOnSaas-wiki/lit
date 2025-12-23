@@ -13,7 +13,7 @@ module Lit
     def initialize(input:, format:, locale_keys: [], skip_nil: true, dry_run: false, raw: false)
       raise ArgumentError, 'format must be yaml or csv' if %i[yaml csv].exclude?(format.to_sym)
       @input = input
-      @locale_keys = locale_keys.presence || I18n.available_locales
+      @locale_keys = locale_keys.presence || ::I18n.available_locales
       @format = format
       @skip_nil = skip_nil
       @dry_run = dry_run
@@ -29,7 +29,7 @@ module Lit
     def import_yaml
       validate_yaml
       locale_keys.each do |locale|
-        I18n.with_locale(locale) do
+        ::I18n.with_locale(locale) do
           yml = parsed_yaml[locale.to_s]
           Hash[*Lit::Cache.flatten_hash(yml)].each do |key, default_translation|
             next if default_translation.nil? && skip_nil
@@ -37,7 +37,7 @@ module Lit
           end
         end
       end
-    rescue Psych::SyntaxError => e
+    rescue ::Psych::SyntaxError => e
       raise ArgumentError, "Invalid YAML file: #{e.message}", cause: e
     end
 
@@ -54,7 +54,7 @@ module Lit
           upsert(locale, key, value)
         end
       end
-    rescue CSV::MalformedCSVError => e
+    rescue ::CSV::MalformedCSVError => e
       raise ArgumentError, "Invalid CSV file: #{e.message}", cause: e
     end
 
@@ -100,16 +100,16 @@ module Lit
     def parsed_csv
       @parsed_csv ||=
         begin
-          CSV.parse(input)
-        rescue CSV::MalformedCSVError
+          ::CSV.parse(input)
+        rescue ::CSV::MalformedCSVError
           # Some Excel versions tend to save CSVs with columns separated with tabs instead
           # of commas. Let's try that out if needed.
-          CSV.parse(input, col_sep: "\t")
+          ::CSV.parse(input, col_sep: "\t")
         end
     end
 
     def parsed_yaml
-      @parsed_yaml ||= YAML.load(input)
+      @parsed_yaml ||= ::YAML.load(input)
     end
 
     def locales_in_csv
@@ -126,7 +126,7 @@ module Lit
     # is there, translated_value is overridden with the imported one
     # and is_changed is set to true.
     def upsert(locale, key, value) # rubocop:disable Metrics/MethodLength
-      I18n.with_locale(locale) do
+      ::I18n.with_locale(locale) do
         # when an array has to be inserted with a default value, it needs to
         # be done like:
         # I18n.t('foo', default: [['bar', 'baz']])
@@ -135,7 +135,7 @@ module Lit
         # don't specify fallback keys and only specify the final fallback, which
         # is the array
         val = value.is_a?(Array) ? [value] : value
-        I18n.t(key, default: val)
+        ::I18n.t(key, default: val)
 
         # this indicates that this translation already exists
         existing_translation =

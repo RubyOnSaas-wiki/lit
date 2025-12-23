@@ -6,7 +6,7 @@ module Lit
       Lit.api_enabled = true
       Lit.api_key = 'test'
       @routes = Lit::Engine.routes
-      request.env['HTTP_AUTHORIZATION'] = ActionController::HttpAuthentication::Token.encode_credentials('test')
+      request.env['HTTP_AUTHORIZATION'] = ::ActionController::HttpAuthentication::Token.encode_credentials('test')
     end
 
     test 'should get index' do
@@ -21,19 +21,19 @@ module Lit
       Lit::Engine.routes.clear!
       Dummy::Application.reload_routes!
       @routes = Lit::Engine.routes
-      if defined?(ActionController::UrlGenerationError)
-        assert_raises(ActionController::UrlGenerationError) do
+      if defined?(::ActionController::UrlGenerationError)
+        assert_raises(::ActionController::UrlGenerationError) do
           get :index, format: :json
         end
       else
-        assert_raises(ActionController::RoutingError) do
+        assert_raises(::ActionController::RoutingError) do
           get :index, format: :json
         end
       end
     end
 
     test 'should not be able to access if authorization token is invalid' do
-      request.env['HTTP_AUTHORIZATION'] = ActionController::HttpAuthentication::Token.encode_credentials('invalid')
+      request.env['HTTP_AUTHORIZATION'] = ::ActionController::HttpAuthentication::Token.encode_credentials('invalid')
       get :index, format: :json
       assert_response 401
     end

@@ -121,7 +121,7 @@ module Lit
 
     def load_all_translations
       begin
-        ActiveRecord::Base.connection_pool.with_connection do
+        ::ActiveRecord::Base.connection_pool.with_connection do
           first = Localization.active.order(id: :asc).first
           last = Localization.active.order(id: :desc).first
           if !first || (!localizations.has_key?(first.full_key) ||
@@ -152,9 +152,9 @@ module Lit
         end
       rescue Timeout::Error
         lit_logger.warn "Lit cache loading timed out in background thread after 30 seconds"
-      rescue ActiveRecord::ConnectionTimeoutError => e
+      rescue ::ActiveRecord::ConnectionTimeoutError => e
         lit_logger.error "Database connection timeout during Lit cache loading: #{e.message}"
-      rescue ActiveRecord::StatementTimeout => e
+      rescue ::ActiveRecord::StatementTimeout => e
         lit_logger.error "Database query timeout during Lit cache loading: #{e.message}"
       rescue => e
         lit_logger.error "Error loading Lit cache in background: #{e.class} - #{e.message}"
@@ -179,7 +179,7 @@ module Lit
       localization_keys.delete(key_without_locale)
       @localization_object_cache.delete(key)
       @localization_key_object_cache.delete(key_without_locale)
-      I18n.backend.reload!
+      ::I18n.backend.reload!
     end
 
     def reset_local_cache
@@ -248,7 +248,7 @@ module Lit
     end
 
     def lit_logger
-      @lit_logger ||= Lit.loader&.logger || Logger.new($stdout)
+      @lit_logger ||= Lit.loader&.logger || ::Logger.new($stdout)
     end
 
     def localizations
@@ -269,7 +269,7 @@ module Lit
       
       # Only do database operations if we need to update or create
       if update_value || localization.nil?
-        ActiveRecord::Base.transaction do
+        ::ActiveRecord::Base.transaction do
           localization_key = find_localization_key(key_without_locale)
           localization ||=
             Lit::Localization.where(locale_id: locale.id)

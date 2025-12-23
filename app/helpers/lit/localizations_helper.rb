@@ -23,7 +23,7 @@ module Lit
     end
 
     def available_locales_with_default_first
-      I18n.available_locales.sort_by { |l| l == I18n.default_locale ? 0 : 1 }
+      ::I18n.available_locales.sort_by { |l| l == ::I18n.default_locale ? 0 : 1 }
     end
   end
 end

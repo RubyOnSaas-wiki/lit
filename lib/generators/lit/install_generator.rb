@@ -6,7 +6,7 @@ module Lit
       class_option 'authentication-function', type: :string
       class_option 'no-migrate', type: :boolean
 
-      source_root File.expand_path('../install/templates', __FILE__)
+      source_root ::File.expand_path('../install/templates', __FILE__)
 
       desc 'Automates Lit installation'
 
@@ -36,7 +36,7 @@ module Lit
 
       def add_lit_initializer
         path = "#{::Rails.root}/config/initializers/lit.rb"
-        if File.exist?(path)
+        if ::File.exist?(path)
           puts 'Skipping config/initializers/lit.rb creation, file already exists!'
         else
           puts 'Adding lit initializer (config/initializers/lit.rb)...'

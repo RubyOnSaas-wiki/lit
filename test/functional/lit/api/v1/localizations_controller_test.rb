@@ -12,7 +12,7 @@ module Lit
       Lit::Engine.routes.clear!
       Dummy::Application.reload_routes!
       @routes = Lit::Engine.routes
-      request.env['HTTP_AUTHORIZATION'] = ActionController::HttpAuthentication::Token.encode_credentials('test')
+      request.env['HTTP_AUTHORIZATION'] = ::ActionController::HttpAuthentication::Token.encode_credentials('test')
       Lit.ignore_yaml_on_startup = false
       Lit.init
     end

@@ -4,24 +4,24 @@ namespace :lit do
     locale_keys = ENV['LOCALES'].to_s.split(',') || []
     export_format = ENV['FORMAT'].presence&.downcase&.to_sym || :yaml
     include_hits_count = ENV['INCLUDE_HITS_COUNT'].present?
-    path = ENV['OUTPUT'].presence || Rails.root.join('config', 'locales', "lit.#{file_extension(export_format)}")
+    path = ENV['OUTPUT'].presence || ::Rails.root.join('config', 'locales', "lit.#{file_extension(export_format)}")
     if exported = Lit::Export.call(locale_keys: locale_keys, format: export_format,
                                    include_hits_count: include_hits_count)
-      File.new(path, 'w').write(exported)
+      ::File.new(path, 'w').write(exported)
       puts "Successfully exported #{path}."
     end
   end
 
   desc 'Exports translated strings from lit to config/locales/%{locale}.yml file.'
   task export_splitted: :environment do
-    locale_keys = ENV['LOCALES'].to_s.split(',').presence || I18n.available_locales
+    locale_keys = ENV['LOCALES'].to_s.split(',').presence || ::I18n.available_locales
     export_format = ENV['FORMAT'].presence&.downcase&.to_sym || :yaml
 
     locale_keys.each do |loc|
-      path = Rails.root.join('config', 'locales',
+      path = ::Rails.root.join('config', 'locales',
                              "#{loc}.#{file_extension(export_format)}")
       if exported = Lit::Export.call(locale_keys: loc, format: export_format)
-        File.write(path, exported)
+        ::File.write(path, exported)
         puts "Successfully exported #{path}."
       end
     end
@@ -39,7 +39,7 @@ namespace :lit do
       when /\.yml\z/, /\.yaml\z/ then :yaml
       else raise 'file must be a CSV or YAML file'
       end
-    input = File.open(filename)
+    input = ::File.open(filename)
     skip_nil = ['1', 'true'].include?(ENV['SKIP_NIL']) # defaults to false
     Lit::Import.call(
       input: input,
@@ -61,9 +61,9 @@ namespace :lit do
     files = ENV['FILES'].to_s.split(',')
     locale = ENV['LOCALE'].to_s
     skip_nil = ['1', 'true'].include?(ENV['SKIP_NIL'])
-    I18n.with_locale(locale) do
+    ::I18n.with_locale(locale) do
       files.each do |file|
-        locale_file = File.open(Rails.root.join('config', 'locales', file))
+        locale_file = ::File.open(::Rails.root.join('config', 'locales', file))
         Lit::Import.call(
           input: locale_file,
           locale_keys: [locale],

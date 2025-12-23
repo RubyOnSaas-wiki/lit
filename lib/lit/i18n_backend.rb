@@ -5,8 +5,8 @@ require 'lit/services/humanize_service'
 
 module Lit
   class I18nBackend
-    include I18n::Backend::Simple::Implementation
-    include I18n::Backend::Pluralization
+    include ::I18n::Backend::Simple::Implementation
+    include ::I18n::Backend::Pluralization
 
     attr_reader :cache
 
@@ -14,9 +14,9 @@ module Lit
       @cache = cache
       @available_locales_cache = nil
       @translations = {}
-      reserved_keys = I18n.const_get(:RESERVED_KEYS) + %i[lit_default_copy]
-      I18n.send(:remove_const, :RESERVED_KEYS)
-      I18n.const_set(:RESERVED_KEYS, reserved_keys.freeze)
+      reserved_keys = ::I18n.const_get(:RESERVED_KEYS) + %i[lit_default_copy]
+      ::I18n.send(:remove_const, :RESERVED_KEYS)
+      ::I18n.const_set(:RESERVED_KEYS, reserved_keys.freeze)
     end
 
     ## DOC
@@ -35,7 +35,7 @@ module Lit
         end
       end
 
-      if Lit.all_translations_are_html_safe && content.respond_to?(:html_safe)
+      if ::Lit.all_translations_are_html_safe && content.respond_to?(:html_safe)
         content.html_safe
       else
         content
@@ -48,7 +48,7 @@ module Lit
       if @locales && !@locales.empty?
         @available_locales_cache = @locales.map(&:to_sym)
       else
-        @available_locales_cache = Lit::Locale.ordered.visible.map { |l| l.locale.to_sym }
+        @available_locales_cache = ::Lit::Locale.ordered.visible.map { |l| l.locale.to_sym }
       end
       @available_locales_cache
     end
@@ -71,7 +71,7 @@ module Lit
 
       # Check if this is from an app locale file - options[:filename] is set by I18n
       filename = options[:filename].to_s
-      app_locales_path = Rails.root.join('config', 'locales').to_s
+      app_locales_path = ::Rails.root.join('config', 'locales').to_s
 
       # Only store if filename is from app locales or if no filename (runtime store)
       # Runtime stores without filename are typically from app code using I18n.backend.store_translations
@@ -96,11 +96,11 @@ module Lit
         new_translations = scan_for_new_yaml_translations
       rescue => e
         @cache.lit_logger.error "Failed to scan for new YAML translations: #{e.message}"
-        @cache.lit_logger.error e.backtrace.join("\n") if Rails.env.development?
+        @cache.lit_logger.error e.backtrace.join("\n") if ::Rails.env.development?
         new_translations = []
       end
       
-      new_translation_keys = Set.new
+      new_translation_keys = ::Set.new
       new_translations.each do |translation|
         new_translation_keys.add("#{translation[:locale]}.#{translation[:key]}")
       end
@@ -113,7 +113,7 @@ module Lit
         end
       rescue => e
         @cache.lit_logger.error "Failed to flatten translations: #{e.message}"
-        @cache.lit_logger.error e.backtrace.join("\n") if Rails.env.development?
+        @cache.lit_logger.error e.backtrace.join("\n") if ::Rails.env.development?
         return
       end
       
@@ -122,7 +122,7 @@ module Lit
       end
       
       translations_to_process = []
-      processed_keys = Set.new
+      processed_keys = ::Set.new
       skipped_count = 0
       
       all_translations.each do |locale, key, value, is_array|
@@ -164,7 +164,7 @@ module Lit
             end
           rescue => e
             @cache.lit_logger.error "Failed to process YAML batch #{batch_num}: #{e.message}"
-            @cache.lit_logger.error e.backtrace.join("\n") if Rails.env.development?
+            @cache.lit_logger.error e.backtrace.join("\n") if ::Rails.env.development?
             next
           end
         end
@@ -179,29 +179,29 @@ module Lit
       new_translations = []
 
       # Only scan app translation files, not gems
-      app_locales_path = Rails.root.join('config', 'locales').to_s
-      yaml_files = I18n.load_path.select do |path|
+      app_locales_path = ::Rails.root.join('config', 'locales').to_s
+      yaml_files = ::I18n.load_path.select do |path|
         (path.end_with?('.yml') || path.end_with?('.yaml')) && path.start_with?(app_locales_path)
       end
 
       @cache.lit_logger.info "Scanning #{yaml_files.length} YAML files for new translations"
 
       # Pre-load existing keys from database for faster lookup
-      existing_keys = Set.new
-      Lit::LocalizationKey.pluck(:localization_key).each do |key|
-        Lit::Locale.pluck(:locale).each do |locale|
+      existing_keys = ::Set.new
+      ::Lit::LocalizationKey.pluck(:localization_key).each do |key|
+        ::Lit::Locale.pluck(:locale).each do |locale|
           existing_keys.add("#{locale}.#{key}")
         end
       end
 
       yaml_files.each do |file_path|
-        next unless File.exist?(file_path)
+        next unless ::File.exist?(file_path)
 
         begin
-          yaml_content = YAML.load_file(file_path, aliases: true)
+          yaml_content = ::YAML.load_file(file_path, aliases: true)
         rescue => e
           begin
-            yaml_content = YAML.load_file(file_path)
+            yaml_content = ::YAML.load_file(file_path)
           rescue => e2
             @cache.lit_logger.warn "Failed to scan YAML file #{file_path}: #{e2.message}"
             next
@@ -264,7 +264,7 @@ module Lit
           end
         rescue => e
           @cache.lit_logger.error "Failed to store new translations batch #{batch_num}: #{e.message}"
-          @cache.lit_logger.error e.backtrace.join("\n") if Rails.env.development?
+          @cache.lit_logger.error e.backtrace.join("\n") if ::Rails.env.development?
           next
         end
       end
@@ -334,7 +334,7 @@ module Lit
     end
 
     def update_default_localization(locale, options)
-      parts = I18n.normalize_keys(locale, @untranslated_key, options[:scope], options[:separator])
+      parts = ::I18n.normalize_keys(locale, @untranslated_key, options[:scope], options[:separator])
       key_with_locale = parts.join('.')
       content = options[:lit_default_copy]
       # we do not force array on singular strings packed into Array
@@ -354,7 +354,7 @@ module Lit
     def lookup(locale, key, scope = [], options = {})
       init_translations unless initialized?
 
-      parts = I18n.normalize_keys(locale, key, scope, options[:separator])
+      parts = ::I18n.normalize_keys(locale, key, scope, options[:separator])
       key_with_locale = parts.join('.')
 
       # we might want to return content later, but we first need to check if it's in cache.
@@ -381,11 +381,11 @@ module Lit
             if options[:lit_default_copy].is_a?(Array)
               default = options[:lit_default_copy].map do |key_or_value|
                 if key_or_value.is_a?(Symbol)
-                  normalized = I18n.normalize_keys(
+                  normalized = ::I18n.normalize_keys(
                     nil, key_or_value.to_s, options[:scope], options[:separator]
                   ).join('.')
-                  if on_rails_6_1_or_higher? && Lit::Services::HumanizeService.should_humanize?(key)
-                    Lit::Services::HumanizeService.humanize(normalized)
+                  if on_rails_6_1_or_higher? && ::Lit::Services::HumanizeService.should_humanize?(key)
+                    ::Lit::Services::HumanizeService.humanize(normalized)
                   else
                     normalized.to_sym
                   end
@@ -406,8 +406,8 @@ module Lit
             end
           end
 
-          if content.nil? && !on_rails_6_1_or_higher? && Lit::Services::HumanizeService.should_humanize?(key)
-            @cache[key_with_locale] = Lit::Services::HumanizeService.humanize(key)
+          if content.nil? && !on_rails_6_1_or_higher? && ::Lit::Services::HumanizeService.should_humanize?(key)
+            @cache[key_with_locale] = ::Lit::Services::HumanizeService.humanize(key)
             content = @cache[key_with_locale]
           end
         end
@@ -429,7 +429,7 @@ module Lit
         key_without_locale = scope.join('.')
         # Skip ignored keys (gem translations, etc.)
         return if is_ignored_key(key_without_locale)
-        return if startup_process && Lit.ignore_yaml_on_startup && (Thread.current[:lit_cache_keys] || @cache.keys).member?(key)
+        return if startup_process && ::Lit.ignore_yaml_on_startup && (Thread.current[:lit_cache_keys] || @cache.keys).member?(key)
         @cache.update_locale(key, data, data.is_a?(Array), startup_process)
       elsif data.nil?
         return if startup_process
@@ -447,7 +447,7 @@ module Lit
       # load translations from database to cache
       @cache.load_all_translations
       # load translations from @translations to cache in batches
-      load_yaml_translations_in_batches unless Lit.ignore_yaml_on_startup
+      load_yaml_translations_in_batches unless ::Lit.ignore_yaml_on_startup
       @initialized = true
     end
 
@@ -468,7 +468,7 @@ module Lit
     end
 
     def is_ignored_key(key_without_locale)
-      Lit.ignored_keys.any?{ |k| key_without_locale.start_with?(k) }
+      ::Lit.ignored_keys.any?{ |k| key_without_locale.start_with?(k) }
     end
 
     # checks if should cache. `had_key` is passed, as once cache has been accesed, it's already modified and key exists

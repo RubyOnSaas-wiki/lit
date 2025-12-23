@@ -86,8 +86,8 @@ module Lit::CloudTranslation::Providers
           end
         }
       end
-      { keyfile_hash: JSON.parse(File.read(ENV['GOOGLE_TRANSLATE_API_KEYFILE'])) }
-    rescue JSON::ParserError
+      { keyfile_hash: ::JSON.parse(::File.read(ENV['GOOGLE_TRANSLATE_API_KEYFILE'])) }
+    rescue ::JSON::ParserError
       raise
     rescue Errno::ENOENT
       { keyfile_hash: nil }

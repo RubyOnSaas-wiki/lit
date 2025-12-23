@@ -70,7 +70,7 @@ module Lit
     test 'should indicate sync completion' do
       @source.update_column(:sync_complete, true)
       get :sync_complete, params: { format: :json, id: @source.id }
-      body = JSON.parse(response.body)
+      body = ::JSON.parse(response.body)
       assert_equal true, body['sync_complete']
     end
   end
