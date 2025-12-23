@@ -17,7 +17,7 @@ class RemoteInteractorService
   private
 
   def initialize_uri(path, query_values)
-    uri = ::URI(@source.url + path)
+    uri = ::URI.parse(@source.url + path)
     query_values.each do |k, v|
       params = ::URI.decode_www_form(uri.query || '') << [k, v]
       uri.query = ::URI.encode_www_form(params)
