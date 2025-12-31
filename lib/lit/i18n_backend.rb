@@ -188,9 +188,9 @@ module Lit
 
       # Pre-load existing keys from database for faster lookup
       existing_keys = ::Set.new
-      ::Lit::LocalizationKey.pluck(:localization_key).each do |key|
-        ::Lit::Locale.pluck(:locale).each do |locale|
-          existing_keys.add("#{locale}.#{key}")
+      ::Lit::LocalizationKey.find_each do |key|
+        ::Lit::Locale.find_each do |locale|
+          existing_keys.add("#{locale.locale}.#{key.localization_key}")
         end
       end
 
