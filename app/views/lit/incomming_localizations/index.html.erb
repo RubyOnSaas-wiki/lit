@@ -25,7 +25,7 @@
   <% @incomming_localizations.each do |il| %>
     <tr data-id="<%= il.id %>">
       <td colspan="3">
-        <%= EmojiFlag.new(il.locale_str) %>
+        <%= EmojiFlag.new(il.locale_str == 'no' ? 'nn' : il.locale_str) %>
         <strong><%= il.localization_key_str %></strong>
       </td>
     </tr>

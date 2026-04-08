@@ -30,7 +30,7 @@ module Lit
     def build_translations_hash
       translations_hash = {}
       
-      localizations.each do |localization|
+      localizations.find_each do |localization|
         begin
           localization_key = localization.localization_key.localization_key
           

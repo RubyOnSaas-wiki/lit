@@ -18,7 +18,7 @@ module Lit
                           .includes(:localizations)
                           .joins(:localizations)
                           .where(lit_localizations: { locale_id: english_locale.id })
-                          .each do |key|
+                          .find_each do |key|
         english_localization = key.localizations.find { |l| l.locale_id == english_locale.id }
         translation = english_localization&.translation || ''
 

@@ -1,0 +1,128 @@
+<div class="lit-create-locale">
+  <h1>Create New Language</h1>
+  
+  <div class="lit-create-locale-description">
+    <p>Enter a language code (e.g., 'fr', 'de', 'es') to create a new language with translations automatically generated from English using Google Translation.</p>
+    <p class="lit-note"><strong>Note:</strong> This process runs in the background and may take a few moments depending on the number of translations.</p>
+  </div>
+
+  <div class="lit-create-locale-form">
+    <%= form_with url: lit.locales_path, method: :post, local: true, class: 'form-horizontal' do |form| %>
+      <div class="form-group">
+        <%= form.label :locale_code, "Language Code:", class: 'col-sm-2 control-label' %>
+        <div class="col-sm-10">
+          <%= form.text_field :locale_code, 
+                             placeholder: 'e.g., fr, de, es, pt-BR', 
+                             class: 'form-control', 
+                             required: true,
+                             pattern: '[a-z]{2}(-[A-Z]{2})?',
+                             title: 'Enter a valid language code (e.g., fr, de, es, pt-BR)',
+                             autofocus: true %>
+          <span class="help-block">Enter a valid ISO 639-1 language code (e.g., 'fr' for French, 'de' for German, 'pt-BR' for Brazilian Portuguese)</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <%= form.submit "Create Language", class: 'btn btn-primary', data: { confirm: 'This will create a new language and translate all English translations. This may take a few moments. Continue?' } %>
+          <%= link_to 'Cancel', lit.locales_path, class: 'btn btn-default' %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="lit-create-locale-info">
+    <h3>Available Languages:</h3>
+    <div class="lit-locales-list">
+      <% Lit::Locale.ordered.visible.each do |locale| %>
+        <div class="lit-locale-item">
+          <strong><%= locale.locale.upcase %></strong>
+          <span class="lit-locale-stats">
+            (<%= locale.all_localizations_count %> translations, 
+            <%= locale.translated_percentage %>% translated)
+          </span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="lit-create-locale-actions">
+    <%= link_to 'Back to Locales', lit.locales_path, class: 'btn btn-default' %>
+    <%= link_to 'Back to Dashboard', lit.root_path, class: 'btn btn-default' %>
+  </div>
+</div>
+
+<style>
+.lit-create-locale {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.lit-create-locale-description {
+  margin-bottom: 30px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  border-left: 4px solid #007bff;
+}
+
+.lit-create-locale-description .lit-note {
+  margin-top: 10px;
+  margin-bottom: 0;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.lit-create-locale-form {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.lit-create-locale-form .help-block {
+  margin-top: 5px;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.lit-create-locale-info {
+  margin-bottom: 30px;
+}
+
+.lit-create-locale-info h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.lit-locales-list {
+  margin-top: 15px;
+}
+
+.lit-locale-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.lit-locale-item:last-child {
+  border-bottom: none;
+}
+
+.lit-locale-stats {
+  color: #666;
+  font-size: 0.9em;
+  margin-left: 10px;
+}
+
+.lit-create-locale-actions {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 2px solid #eee;
+}
+
+.lit-create-locale-actions .btn {
+  margin: 0 5px;
+}
+</style>
+

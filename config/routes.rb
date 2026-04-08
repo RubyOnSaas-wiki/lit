@@ -11,7 +11,7 @@ Lit::Engine.routes.draw do
       end
     end
   end
-  resources :locales, only: [:index, :destroy] do
+  resources :locales, only: [:index, :new, :create, :destroy] do
     put :hide, on: :member
   end
   resources :localization_keys, only: [:index, :destroy] do

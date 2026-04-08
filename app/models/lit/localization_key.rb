@@ -89,8 +89,8 @@ module Lit
     end
 
     def remove_from_cache
-      Lit::Locale.pluck(:locale).each do |l|
-        Lit.init.cache.delete_key "#{l}.#{localization_key}"
+      Lit::Locale.find_each do |locale|
+        Lit.init.cache.delete_key "#{locale.locale}.#{localization_key}"
       end
     end
 
