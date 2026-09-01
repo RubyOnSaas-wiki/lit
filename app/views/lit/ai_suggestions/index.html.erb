@@ -1,68 +1,60 @@
 <h3><%= I18n.t('lit.ai_suggestions.header', default: 'AI translated') %></h3>
 
-<div class="well ai_suggestions_intro">
+<div class="ai-intro">
   <p>
-    <strong>AI translation proposals.</strong>
-    Nothing on this tab is live yet &mdash; until you accept a proposal, the application keeps
-    serving the value in the <em>Current value</em> column, and the <em>Translate!</em> tab is
-    unchanged.
+    <strong>Nothing here is live yet.</strong>
+    Until you accept a proposal the application keeps serving the <em>Current value</em>,
+    and the <em>Translate!</em> tab is unchanged.
   </p>
-  <ul>
-    <li><strong>Current value</strong> is what the application serves right now. If somebody edits
-      it in <em>Translate!</em>, it changes here too.</li>
-    <li><strong>Proposal</strong> is what the AI suggests. You can edit it before accepting.</li>
-    <li><strong>Accept</strong> writes the proposal into the translations, marks it as ready for
-      synchronization, and removes the proposal from this tab.</li>
-    <li><strong>Reject</strong> deletes the proposal and changes no translation.</li>
-    <li><strong>Tags</strong> are the names of the features a key was introduced for. The filter
-      lists only tags that appear on this tab.</li>
-  </ul>
+  <details>
+    <summary>How this works</summary>
+    <ul>
+      <li><strong>Current value</strong> is what the application serves right now. If somebody edits it in <em>Translate!</em>, it changes here too.</li>
+      <li><strong>Proposal</strong> is what the AI suggests. You can edit it before accepting.</li>
+      <li><strong>Accept</strong> writes the proposal into the translations, marks it ready for synchronization, and removes it from this tab.</li>
+      <li><strong>Reject</strong> deletes the proposal and changes no translation.</li>
+      <li><strong>Tags</strong> are the features a key was introduced for. The filter lists only tags present on this tab.</li>
+    </ul>
+  </details>
 </div>
 
 <%= render 'filters' %>
 
 <% if @ai_suggestions.to_a.empty? %>
-  <p class="text-muted">No AI proposals are waiting.</p>
+  <p class="ai-empty">No AI proposals are waiting.</p>
 <% else %>
-  <div class="col-12 text-right ai_suggestions_bulk">
-    <%= link_to 'accept all', lit.accept_all_ai_suggestions_path(@search_options.to_hash),
-                method: :post, class: 'button button-sm button-primary',
-                data: { confirm: "This will accept #{@scope.count} proposal(s) currently matching your filter and mark them ready for synchronization. Proceed?" } %>
-    <%= link_to 'reject all', lit.reject_all_ai_suggestions_path(@search_options.to_hash),
-                method: :delete, class: 'button button-sm',
-                data: { confirm: "This will discard #{@scope.count} proposal(s) currently matching your filter. Proceed?" } %>
-  </div>
-
-  <% @ai_suggestions.group_by(&:localization_key).each do |localization_key, suggestions| %>
-    <table class="table mt-1 ai_suggestion_group">
+  <table class="table ai-table">
+    <thead>
       <tr>
-        <td>
-          <strong><%= localization_key.localization_key %></strong>
-          <i class="fa fa-clipboard js-copy_to_clipboard copy_to_clipboard_button"
-             data-key="<%= localization_key.localization_key %>"></i>
-          <% localization_key.tags.each do |tag| %>
-            <span class="label label-default ai_suggestion_tag"><%= tag.name %></span>
-          <% end %>
-
-          <table class="table table-bordered table-striped">
-            <tr>
-              <th class="col-md-1 text-center">Locale</th>
-              <th class="col-md-4">Current value</th>
-              <th class="col-md-5">Proposal</th>
-              <th class="col-md-2 text-center">Actions</th>
-            </tr>
-            <% suggestions.each do |suggestion| %>
-              <%= render 'suggestion', suggestion: suggestion %>
-            <% end %>
-          </table>
-        </td>
+        <th class="ai-locale">Locale</th>
+        <th class="ai-current">Current value</th>
+        <th class="ai-proposal">Proposal</th>
+        <th class="ai-actions">Actions</th>
       </tr>
-    </table>
-  <% end %>
-<% end %>
+    </thead>
+    <% @ai_suggestions.group_by(&:localization_key).each do |localization_key, suggestions| %>
+      <tbody class="ai-group">
+        <tr class="ai-key-row">
+          <td colspan="4">
+            <span class="ai-key"><%= localization_key.localization_key %></span>
+            <i class="fa fa-clipboard js-copy_to_clipboard copy_to_clipboard_button"
+               title="Copy key" data-key="<%= localization_key.localization_key %>"></i>
+            <% localization_key.tags.each do |tag| %>
+              <%= link_to tag.name, lit.ai_suggestions_path(@search_options.to_hash.merge('tags' => [tag.name])),
+                          class: 'ai-tag', title: "Filter by #{tag.name}" %>
+            <% end %>
+          </td>
+        </tr>
+        <% suggestions.each do |suggestion| %>
+          <%= render 'suggestion', suggestion: suggestion %>
+        <% end %>
+      </tbody>
+    <% end %>
+  </table>
 
-<% if defined?(Kaminari) && @ai_suggestions.respond_to?(:current_page) %>
-  <%= paginate @ai_suggestions, theme: 'lit' %>
-<% elsif defined?(WillPaginate) && @ai_suggestions.respond_to?(:total_pages) %>
-  <%= will_paginate @ai_suggestions %>
+  <% if defined?(Kaminari) && @ai_suggestions.respond_to?(:current_page) %>
+    <%= paginate @ai_suggestions, theme: 'lit' %>
+  <% elsif defined?(WillPaginate) && @ai_suggestions.respond_to?(:total_pages) %>
+    <%= will_paginate @ai_suggestions %>
+  <% end %>
 <% end %>

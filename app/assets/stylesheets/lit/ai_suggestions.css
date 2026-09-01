@@ -1,0 +1,115 @@
+/* AI translated tab */
+
+.ai-intro {
+  background: #fff;
+  border: 1px solid #e3e3e3;
+  border-left: 3px solid #5bc0de;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ai-intro > p { margin: 0; }
+.ai-intro details { margin-top: 6px; }
+.ai-intro summary {
+  cursor: pointer;
+  color: #337ab7;
+  font-size: 12px;
+  outline-offset: 2px;
+}
+.ai-intro details ul {
+  margin: 8px 0 2px;
+  padding-left: 18px;
+  color: #555;
+}
+.ai-intro details li { margin-bottom: 2px; }
+
+.ai-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.ai-toolbar .ai-spacer { flex: 1 1 auto; }
+.ai-toolbar .form-control { height: 30px; padding: 4px 8px; font-size: 13px; }
+.ai-toolbar select.form-control { width: auto; }
+.ai-toolbar input.ai-tag-input { width: 220px; }
+.ai-count { color: #777; font-size: 12px; margin-right: 4px; }
+
+.ai-table { margin-bottom: 12px; font-size: 13px; }
+.ai-table > thead > tr > th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  font-weight: 600;
+  border-bottom: 1px solid #ddd;
+  padding: 6px 10px;
+}
+.ai-table > tbody > tr > td { padding: 6px 10px; vertical-align: middle; }
+.ai-table > tbody > tr.ai-key-row > td {
+  background: #f5f5f5;
+  border-top: 1px solid #ddd;
+  padding: 7px 10px;
+}
+.ai-table > tbody > tr.ai-key-row .ai-key {
+  font-family: Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: #333;
+  word-break: break-all;
+  margin-right: 6px;
+}
+.ai-table > tbody > tr.ai-key-row .copy_to_clipboard_button {
+  color: #aaa;
+  font-size: 12px;
+}
+.ai-table > tbody > tr.ai-key-row .copy_to_clipboard_button:hover { color: #555; }
+.ai-table > tbody > tr.ai-row:hover > td { background: #fbfbfb; }
+
+.ai-locale { width: 80px; white-space: nowrap; color: #555; }
+.ai-current { width: 30%; color: #777; }
+.ai-current em { color: #bbb; }
+.ai-proposal { width: 38%; }
+.ai-proposal .ai-provider { color: #aaa; font-size: 11px; margin-left: 6px; }
+.ai-actions { width: 190px; text-align: right; white-space: nowrap; }
+.ai-actions .btn { margin-left: 3px; }
+.ai-actions .btn .fa { color: inherit; }
+/* One green Accept per row already carries the page; a red Reject beside every
+   one of them turns the list into a warning sign. Neutral until you aim at it. */
+.ai-actions .ai-reject { color: #b94a48; }
+.ai-actions .ai-reject:hover,
+.ai-actions .ai-reject:focus { background: #d9534f; border-color: #d43f3a; color: #fff; }
+
+/* Keeps the control from collapsing into a tall multi-select if select2 is
+   unavailable. */
+select.js-tag-filter { height: 30px; }
+
+.ai-tag {
+  display: inline-block;
+  background: #eef3f8;
+  border: 1px solid #d6e2ee;
+  color: #3a6b9c;
+  border-radius: 10px;
+  padding: 1px 9px;
+  font-size: 11px;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+.ai-flag { font-size: 14px; margin-right: 6px; }
+.ai-badge {
+  display: inline-block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+.ai-badge-edited { background: #e8f4fd; color: #31708f; }
+.ai-badge-stale { background: #fcf3e3; color: #8a6d3b; }
+
+.ai-edit { margin-top: 6px; }
+.ai-edit textarea { font-size: 13px; margin-bottom: 6px; }
+.ai-empty { color: #999; padding: 24px 0; }

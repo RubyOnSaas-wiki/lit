@@ -6,6 +6,10 @@ module Lit
   class AiSuggestionsController < ::Lit::ApplicationController
     include Lit::TagFilterable
 
+    # Kaminari's default (10 in elvium) leaves barely a handful of strings on
+    # screen; a reviewer works through these in batches.
+    PER_PAGE = 30
+
     before_action :find_search_options
     before_action :find_ai_suggestion, only: %i[accept destroy update]
 
@@ -78,7 +82,8 @@ module Lit
 
     def paginate(scope)
       if defined?(Kaminari) && scope.respond_to?(Kaminari.config.page_method_name)
-        scope.send(Kaminari.config.page_method_name, params[:page])
+        paged = scope.send(Kaminari.config.page_method_name, params[:page])
+        paged.respond_to?(:per) ? paged.per(PER_PAGE) : paged
       elsif defined?(WillPaginate) && scope.respond_to?(:paginate)
         scope.paginate(page: params[:page])
       else

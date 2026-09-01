@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-09-01
+### Changed
+- Reworked the "AI translated" tab after review: one dense table instead of a table per
+  key, so a reviewer sees roughly a dozen strings per screen instead of three; the
+  explanation collapsed behind "How this works"; real buttons for Accept / edit / Reject
+  and for Accept all / Reject all, with the proposal count beside them; clickable tag
+  chips; 30 rows per page instead of Kaminari's host default.
+
 ## [1.2.2] - 2026-09-01
 ### Fixed
 - The `refresh_keys` concurrency guard was backed by `Rails.cache`, which a host may

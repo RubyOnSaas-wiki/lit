@@ -1,47 +1,45 @@
-<tr class="ai_suggestion_row" data-id="<%= suggestion.id %>">
-  <td class="locale_row text-center">
-    <%= EmojiFlag.new(suggestion.locale.locale) %>
-    <%= suggestion.locale.locale %>
+<tr class="ai-row" data-id="<%= suggestion.id %>">
+  <td class="ai-locale">
+    <span class="ai-flag"><%= EmojiFlag.new(suggestion.locale.locale) %></span><%= suggestion.locale.locale %>
   </td>
-  <td class="ai_suggestion_current">
+  <td class="ai-current">
     <%= render 'lit/localization_keys/localization_row', localization: suggestion.current_value %>
     <% if suggestion.stale? %>
-      <span class="label label-warning" title="The translation changed after this proposal was made">
-        changed manually since proposed
-      </span>
+      <span class="ai-badge ai-badge-stale"
+            title="The translation changed after this proposal was made">changed since</span>
     <% end %>
   </td>
-  <td class="ai_suggestion_proposal">
-    <div class="suggestion_value">
+  <td class="ai-proposal">
+    <div class="ai-value">
       <%= render 'lit/localization_keys/localization_row', localization: suggestion.suggested_value %>
       <% if suggestion.is_edited? %>
-        <span class="label label-info" title="Edited by a human before acceptance">edited</span>
+        <span class="ai-badge ai-badge-edited" title="Edited by a human before acceptance">edited</span>
       <% end %>
       <% if suggestion.provider.present? %>
-        <span class="text-muted small ai_suggestion_provider"><%= suggestion.provider %></span>
+        <span class="ai-provider"><%= suggestion.provider %></span>
       <% end %>
     </div>
-    <div class="suggestion_edit hidden">
+    <div class="ai-edit hidden">
       <%= form_with model: suggestion, url: lit.ai_suggestion_path(suggestion),
                     method: :patch, local: false, scope: :ai_suggestion do |f| %>
         <%= f.text_area :suggested_value, class: 'form-control', rows: 3 %>
-        <%= f.submit 'Save', class: 'button button-sm button-primary' %>
-        <a href="#" class="js-edit-suggestion button button-sm">Cancel</a>
+        <%= f.submit 'Save', class: 'btn btn-sm btn-primary' %>
+        <a href="#" class="btn btn-sm btn-default js-edit-suggestion">Cancel</a>
       <% end %>
     </div>
   </td>
-  <td class="text-center ai_suggestion_actions">
+  <td class="ai-actions">
     <%= link_to lit.accept_ai_suggestion_path(suggestion), method: :post, remote: true,
-                class: 'title', title: 'Accept this proposal' do %>
-      <%= draw_icon 'check' %>
+                class: 'btn btn-sm btn-success', title: 'Accept this proposal' do %>
+      <i class="fa fa-check"></i> Accept
     <% end %>
-    <a href="#" class="js-edit-suggestion title" title="Edit before accepting">
-      <%= draw_icon 'pencil' %>
+    <a href="#" class="btn btn-sm btn-default js-edit-suggestion" title="Edit before accepting">
+      <i class="fa fa-pencil"></i>
     </a>
     <%= link_to lit.ai_suggestion_path(suggestion), method: :delete, remote: true,
-                class: 'title', title: 'Reject this proposal',
+                class: 'btn btn-sm btn-default ai-reject', title: 'Reject this proposal',
                 data: { confirm: I18n.t('lit.common.you_sure', default: 'Are you sure?') } do %>
-      <%= draw_icon 'trash-o' %>
+      <i class="fa fa-trash-o"></i>
     <% end %>
   </td>
 </tr>

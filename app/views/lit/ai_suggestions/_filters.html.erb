@@ -1,17 +1,34 @@
-<%= form_tag lit.ai_suggestions_path, method: :get, class: 'form-inline ai_suggestions_filters' do %>
-  <div class="form-group">
+<div class="ai-toolbar">
+  <%= form_tag lit.ai_suggestions_path, method: :get, class: 'ai-toolbar', style: 'margin:0' do %>
     <%= label_tag :locale, 'Locale', class: 'sr-only' %>
     <%= select_tag :locale,
                    options_for_select(Lit::Locale.ordered.pluck(:locale), @search_options[:locale]),
                    include_blank: 'All locales', class: 'form-control' %>
-  </div>
-  <div class="form-group ai_suggestions_tag_filter">
     <%= label_tag 'tags[]', 'Tags', class: 'sr-only' %>
     <%= select_tag 'tags[]',
                    options_for_select(tag_filter_options.map(&:name), selected_tag_names),
-                   multiple: true, class: 'form-control js-tag-filter',
+                   multiple: true, class: 'form-control js-tag-filter ai-tag-input',
                    data: { placeholder: 'Filter by tag' } %>
-  </div>
-  <button type="submit" class="button button-default"><%= draw_icon 'search' %> Filter</button>
-  <%= link_to 'clear', lit.ai_suggestions_path, class: 'button button-sm' %>
-<% end %>
+    <button type="submit" class="btn btn-sm btn-primary"><%= draw_icon 'search' %> Filter</button>
+    <% if @search_options[:locale].present? || selected_tag_names.any? %>
+      <%= link_to 'clear', lit.ai_suggestions_path, class: 'btn btn-sm btn-link' %>
+    <% end %>
+  <% end %>
+
+  <span class="ai-spacer"></span>
+
+  <% total = @scope.count %>
+  <% if total.positive? %>
+    <span class="ai-count"><%= pluralize(total, 'proposal') %><%= ' matching your filter' if @search_options[:locale].present? || selected_tag_names.any? %></span>
+    <%= link_to lit.accept_all_ai_suggestions_path(@search_options.to_hash),
+                method: :post, class: 'btn btn-sm btn-success',
+                data: { confirm: "Accept #{total} proposal(s) and mark them ready for synchronization?" } do %>
+      <i class="fa fa-check-square-o"></i> Accept all
+    <% end %>
+    <%= link_to lit.reject_all_ai_suggestions_path(@search_options.to_hash),
+                method: :delete, class: 'btn btn-sm btn-default',
+                data: { confirm: "Discard #{total} proposal(s)?" } do %>
+      <i class="fa fa-times"></i> Reject all
+    <% end %>
+  <% end %>
+</div>
