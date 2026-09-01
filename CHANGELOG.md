@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-09-01
+### Changed
+- AI translated tab: dropped the per-row provider label (it is always the same agent, so
+  it carried no information) and put the table on one type scale — cell text and
+  proposals at one size, tag chips and status badges sharing a second.
+
 ## [1.2.3] - 2026-09-01
 ### Changed
 - Reworked the "AI translated" tab after review: one dense table instead of a table per

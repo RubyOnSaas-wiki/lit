@@ -15,9 +15,6 @@
       <% if suggestion.is_edited? %>
         <span class="ai-badge ai-badge-edited" title="Edited by a human before acceptance">edited</span>
       <% end %>
-      <% if suggestion.provider.present? %>
-        <span class="ai-provider"><%= suggestion.provider %></span>
-      <% end %>
     </div>
     <div class="ai-edit hidden">
       <%= form_with model: suggestion, url: lit.ai_suggestion_path(suggestion),
