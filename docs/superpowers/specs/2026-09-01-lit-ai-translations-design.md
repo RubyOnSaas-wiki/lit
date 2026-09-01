@@ -464,9 +464,29 @@ part of it, all pre-existing and unrelated to the feature:
   matching what elvium already does.
 - `test/dummy/config/database.yml` created from the sample (untracked).
 
-### Still outstanding
+### Installed and verified in elvium
 
-`db/schema.rb` in elvium cannot be regenerated yet: elvium resolves `lit` from the
-`RubyOnSaas-wiki/lit` git ref, so the new migrations only reach it after these gem changes
-are pushed and the ref is bumped. Sequence: push lit -> bump `Gemfile`/`Gemfile.lock` ->
-`bin/rails db:migrate` -> commit `db/schema.rb`.
+Released as 1.2.0, then 1.2.1 and 1.2.2 for two problems that only a real host surfaced:
+
+- **1.2.1** - the migrations declared `ActiveRecord::Migration[4.2]`, matching the older
+  migrations in the gem. In 4.2 compatibility mode new tables get a plain `integer`
+  primary key, which elvium's `online_migrations` refuses to apply. `Migration[5.2]` (the
+  gem's minimum supported Rails) gives bigint keys. FK columns stay `integer` because the
+  lit tables they reference have `integer` primary keys.
+- **1.2.2** - the `refresh_keys` guard used `Rails.cache`, which elvium configures as a
+  `NullStore` in development, so the guard silently never held. It now claims through
+  `Lit.redis` with `SET NX EX`, keyed with the configured storage prefix.
+
+Verified against a running elvium development app on lit 1.2.2 (52 checks, all passing):
+proposals never touch `lit_localizations` or the cache before acceptance and stay invisible
+to the export/sync scope; accept creates the row, sets `is_changed`, writes the cache and
+removes the proposal; upsert, the human-edit guard, tag normalization and the tag filter
+behave as specified; the active-tag subquery runs on PostgreSQL; and over HTTP the sync key
+`Lit.api_key` is rejected, unknown keys are reported without being written, `pending`
+lists keys that have no localization row and drops them once translated, and the AI tab is
+not readable without an admin session.
+
+One environment note: elvium runs ActiveJob `:inline` in development, so `refresh_keys`
+completes before the response is written and the guard is already released. `:sidekiq` is
+configured in `config/application.rb` for every other environment, which is where the guard
+does its work.
