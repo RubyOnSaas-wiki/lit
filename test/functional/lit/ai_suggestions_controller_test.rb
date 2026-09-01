@@ -72,6 +72,27 @@ module Lit
       assert_equal %w[billing hr-tree], @controller.send(:tag_filter_options).map(&:name)
     end
 
+    test 'the javascript responses target selectors the view actually renders' do
+      get :index
+      body = response.body
+      assert_match(/class="ai-row"/, body)
+      assert_match(/class="ai-group"/, body)
+      assert_match(/class="ai-value"/, body)
+      assert_match(/js-edit-suggestion/, body)
+
+      post :accept, params: { id: @hr_suggestion.id }, xhr: true
+      assert_match(/\.ai-row\[data-id=/, response.body)
+      assert_match(/\.ai-group/, response.body)
+    end
+
+    test 'editing re-renders the row with the same selectors' do
+      patch :update, params: { id: @hr_suggestion.id,
+                               ai_suggestion: { suggested_value: 'Ny' } }, xhr: true
+
+      assert_match(/\.ai-row\[data-id=/, response.body)
+      assert_match(/class=\\"ai-row\\"/, response.body)
+    end
+
     test 'accepting one writes the translation and removes the proposal' do
       post :accept, params: { id: @hr_suggestion.id }, xhr: true
 

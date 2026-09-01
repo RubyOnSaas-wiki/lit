@@ -30,11 +30,11 @@
                 class: 'btn btn-sm btn-success', title: 'Accept this proposal' do %>
       <i class="fa fa-check"></i> Accept
     <% end %>
-    <a href="#" class="btn btn-sm btn-default js-edit-suggestion" title="Edit before accepting">
+    <a href="#" class="btn btn-sm btn-default btn-icon js-edit-suggestion" title="Edit before accepting">
       <i class="fa fa-pencil"></i>
     </a>
     <%= link_to lit.ai_suggestion_path(suggestion), method: :delete, remote: true,
-                class: 'btn btn-sm btn-default ai-reject', title: 'Reject this proposal',
+                class: 'btn btn-sm btn-default btn-icon ai-reject', title: 'Reject this proposal',
                 data: { confirm: I18n.t('lit.common.you_sure', default: 'Are you sure?') } do %>
       <i class="fa fa-trash-o"></i>
     <% end %>

@@ -5,8 +5,8 @@ $(document).ready(function () {
 
   $(document).on('click', '.js-edit-suggestion', function (event) {
     event.preventDefault();
-    var row = $(this).closest('.ai_suggestion_row');
-    row.find('.suggestion_value').toggleClass('hidden');
-    row.find('.suggestion_edit').toggleClass('hidden');
+    var row = $(this).closest('.ai-row');
+    row.find('.ai-value').toggleClass('hidden');
+    row.find('.ai-edit').toggleClass('hidden');
   });
 });

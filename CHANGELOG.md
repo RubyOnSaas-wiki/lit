@@ -5,6 +5,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-09-01
+### Fixed
+- AI translated tab: the 1.2.3 rework renamed the row classes but left the JavaScript and
+  the accept / destroy / update .js.erb responses pointing at the old ones, so inline
+  editing did nothing and an accepted row stayed on screen until reload. Selectors
+  realigned and pinned by tests asserting the view and the javascript responses agree.
+- The tag multiselect initialises at width 100%, which is right in the sidebar but made
+  the tab's horizontal toolbar wrap onto three lines. Constrained inside the toolbar.
+
+### Changed
+- Compacted the row actions and toolbar buttons, and handed the table's borders, striping
+  and font size back to Bootstrap so the tab matches the Translate! list.
+
 ## [1.2.4] - 2026-09-01
 ### Changed
 - AI translated tab: dropped the per-row provider label (it is always the same agent, so
