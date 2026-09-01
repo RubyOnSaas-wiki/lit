@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-09-01
+### Fixed
+- The `refresh_keys` concurrency guard was backed by `Rails.cache`, which a host may
+  legitimately configure as a `NullStore` (elvium does exactly that in development). The
+  guard then silently never held and every request launched another full YAML scan. It now
+  uses Lit's own Redis store when the redis key-value engine is active, keyed with the
+  configured storage prefix, and falls back to `Rails.cache` otherwise.
+
 ## [1.2.1] - 2026-09-01
 ### Fixed
 - The two new migrations declared `ActiveRecord::Migration[4.2]`, matching the older

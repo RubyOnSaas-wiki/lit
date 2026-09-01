@@ -9,14 +9,46 @@ module Lit
 
       queue_as :default
 
-      # Atomically claims the right to run. Returns false when a run is already
-      # in flight, so a hammering client cannot launch parallel full scans.
-      def self.claim_guard
-        ::Rails.cache.write(GUARD_KEY, true, unless_exist: true, expires_in: GUARD_TTL)
-      end
+      class << self
+        # Atomically claims the right to run. Returns false when a run is
+        # already in flight, so a hammering client cannot launch parallel full
+        # scans of every YAML file.
+        def claim_guard
+          if (redis = guard_redis)
+            # SET key 1 NX EX ttl is a single atomic claim. redis-rb >= 4
+            # returns true/false, older versions return "OK"/nil.
+            result = redis.set(guard_key, '1', nx: true, ex: GUARD_TTL)
+            result == true || result == 'OK'
+          else
+            ::Rails.cache.write(GUARD_KEY, true, unless_exist: true, expires_in: GUARD_TTL)
+          end
+        end
 
-      def self.release_guard
-        ::Rails.cache.delete(GUARD_KEY)
+        def release_guard
+          if (redis = guard_redis)
+            redis.del(guard_key)
+          else
+            ::Rails.cache.delete(GUARD_KEY)
+          end
+        end
+
+        private
+
+        # Prefer Lit's own key-value store: it is shared across processes and
+        # hosts wherever Lit runs on Redis, whereas Rails.cache may legitimately
+        # be a NullStore (elvium does exactly that in development), which would
+        # make the guard silently never hold.
+        def guard_redis
+          return nil unless Lit.respond_to?(:redis)
+          Lit.redis
+        rescue StandardError
+          nil
+        end
+
+        def guard_key
+          prefix = Lit.storage_options.is_a?(Hash) ? Lit.storage_options[:prefix] : nil
+          [prefix, GUARD_KEY].compact.join('-')
+        end
       end
 
       def perform

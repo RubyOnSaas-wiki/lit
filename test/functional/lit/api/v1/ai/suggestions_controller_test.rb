@@ -8,6 +8,9 @@ module Lit
       # The dummy app has no cache store configured; the refresh guard needs a
       # real one.
       ::Rails.cache = ActiveSupport::Cache::MemoryStore.new
+      # the refresh guard lives in redis with a 30 minute TTL; without this the
+      # refresh_keys tests depend on whether a previous run left it claimed
+      Lit::RefreshKeysJob.release_guard
       Lit::AiSuggestion.delete_all
       Lit::LocalizationKeyTag.delete_all
       Lit::Tag.delete_all
