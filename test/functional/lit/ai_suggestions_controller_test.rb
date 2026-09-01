@@ -75,9 +75,10 @@ module Lit
     test 'the javascript responses target selectors the view actually renders' do
       get :index
       body = response.body
-      assert_match(/class="ai-row"/, body)
-      assert_match(/class="ai-group"/, body)
-      assert_match(/class="ai-value"/, body)
+      # class tokens, not whole attributes: these sit alongside bootstrap classes
+      assert_match(/class="[^"]*\bai-row\b/, body)
+      assert_match(/class="[^"]*\bai-group\b/, body)
+      assert_match(/class="[^"]*\bai-value\b/, body)
       assert_match(/js-edit-suggestion/, body)
 
       post :accept, params: { id: @hr_suggestion.id }, xhr: true

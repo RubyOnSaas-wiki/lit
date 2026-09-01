@@ -23,38 +23,39 @@
 <% if @ai_suggestions.to_a.empty? %>
   <p class="ai-empty">No AI proposals are waiting.</p>
 <% else %>
-  <table class="table table-bordered table-striped ai-table">
-    <thead>
+  <% @ai_suggestions.group_by(&:localization_key).each do |localization_key, suggestions| %>
+    <table class="table mt-1 ai-group">
       <tr>
-        <th class="ai-locale">Locale</th>
-        <th class="ai-current">Current value</th>
-        <th class="ai-proposal">Proposal</th>
-        <th class="ai-actions">Actions</th>
-      </tr>
-    </thead>
-    <% @ai_suggestions.group_by(&:localization_key).each do |localization_key, suggestions| %>
-      <tbody class="ai-group">
-        <tr class="ai-key-row">
-          <td colspan="4">
-            <span class="ai-key"><%= localization_key.localization_key %></span>
-            <i class="fa fa-clipboard js-copy_to_clipboard copy_to_clipboard_button"
-               title="Copy key" data-key="<%= localization_key.localization_key %>"></i>
-            <% localization_key.tags.each do |tag| %>
-              <%= link_to tag.name, lit.ai_suggestions_path(@search_options.to_hash.merge('tags' => [tag.name])),
-                          class: 'ai-tag', title: "Filter by #{tag.name}" %>
-            <% end %>
-          </td>
-        </tr>
-        <% suggestions.each do |suggestion| %>
-          <%= render 'suggestion', suggestion: suggestion %>
-        <% end %>
-      </tbody>
-    <% end %>
-  </table>
+        <td>
+          <strong class="ai-key"><%= localization_key.localization_key %></strong>
+          <i class="fa fa-clipboard js-copy_to_clipboard copy_to_clipboard_button"
+             title="Copy key" data-key="<%= localization_key.localization_key %>"></i>
+          <% localization_key.tags.each do |tag| %>
+            <%= link_to tag.name, lit.ai_suggestions_path(@search_options.to_hash.merge('tags' => [tag.name])),
+                        class: 'ai-tag', title: "Filter by #{tag.name}" %>
+          <% end %>
 
-  <% if defined?(Kaminari) && @ai_suggestions.respond_to?(:current_page) %>
-    <%= paginate @ai_suggestions, theme: 'lit' %>
-  <% elsif defined?(WillPaginate) && @ai_suggestions.respond_to?(:total_pages) %>
-    <%= will_paginate @ai_suggestions %>
+          <div class="detail_wrapper">
+            <table class="table table-bordered table-striped">
+              <tr>
+                <th class="col-md-1 text-center">Locale</th>
+                <th class="col-md-4">Current value</th>
+                <th class="col-md-5">Proposal</th>
+                <th class="col-md-2 text-center">Actions</th>
+              </tr>
+              <% suggestions.each do |suggestion| %>
+                <%= render 'suggestion', suggestion: suggestion %>
+              <% end %>
+            </table>
+          </div>
+        </td>
+      </tr>
+    </table>
   <% end %>
+<% end %>
+
+<% if defined?(Kaminari) && @ai_suggestions.respond_to?(:current_page) %>
+  <%= paginate @ai_suggestions, theme: 'lit' %>
+<% elsif defined?(WillPaginate) && @ai_suggestions.respond_to?(:total_pages) %>
+  <%= will_paginate @ai_suggestions %>
 <% end %>

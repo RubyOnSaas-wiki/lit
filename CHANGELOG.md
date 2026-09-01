@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-09-01
+### Changed
+- AI translated tab: back to one table per localization key, each with its own header row,
+  matching the Translate! list. The single combined table was denser but did not look like
+  the rest of the interface.
+
 ## [1.2.5] - 2026-09-01
 ### Fixed
 - AI translated tab: the 1.2.3 rework renamed the row classes but left the JavaScript and
