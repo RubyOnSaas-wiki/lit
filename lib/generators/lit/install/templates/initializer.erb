@@ -74,6 +74,15 @@ Lit.api_enabled = false
 # API key is required to authorize third party, if API is enabled
 Lit.api_key = '<%= @api_key %>'
 
+# AI translation-suggestion API enabled? It lets an authorized agent push
+# proposed translations, which a human then reviews on the "AI translated" tab.
+# Both settings are required: without the flag the routes are never drawn.
+Lit.ai_api_enabled = false
+
+# Token for the AI API. Deliberately separate from Lit.api_key, so AI access can
+# be revoked without breaking environment synchronization. Prefer an ENV var.
+Lit.ai_api_key = '<%= @ai_api_key %>'
+
 # If true, last_updated_at column of synchronizaton source will be set to now
 # upon record creation
 Lit.set_last_updated_at_upon_creation = true

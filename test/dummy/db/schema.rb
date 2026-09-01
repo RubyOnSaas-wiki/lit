@@ -2,16 +2,15 @@
 # of editing this file, please use the migrations feature of Active Record to
 # incrementally modify your database, and then regenerate this schema definition.
 #
-# This file is the source Rails uses to define your schema when running `rails
-# db:schema:load`. When creating a new database, `rails db:schema:load` tends to
+# This file is the source Rails uses to define your schema when running `bin/rails
+# db:schema:load`. When creating a new database, `bin/rails db:schema:load` tends to
 # be faster and is potentially less error prone than running all of your
 # migrations from scratch. Old migrations may fail to apply correctly if those
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_11_29_103819) do
-
+ActiveRecord::Schema[7.2].define(version: 2026_09_01_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -30,6 +29,19 @@ ActiveRecord::Schema.define(version: 2018_11_29_103819) do
     t.datetime "updated_at"
     t.index ["email"], name: "index_admins_on_email", unique: true
     t.index ["reset_password_token"], name: "index_admins_on_reset_password_token", unique: true
+  end
+
+  create_table "lit_ai_suggestions", id: :serial, force: :cascade do |t|
+    t.integer "localization_key_id", null: false
+    t.integer "locale_id", null: false
+    t.text "suggested_value"
+    t.text "base_value"
+    t.string "provider"
+    t.boolean "is_edited", default: false, null: false
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
+    t.index ["locale_id"], name: "index_lit_ai_suggestions_on_locale_id"
+    t.index ["localization_key_id", "locale_id"], name: "index_lit_ai_suggestions_on_key_and_locale", unique: true
   end
 
   create_table "lit_incomming_localizations", id: :serial, force: :cascade do |t|
@@ -58,6 +70,15 @@ ActiveRecord::Schema.define(version: 2018_11_29_103819) do
     t.boolean "is_hidden", default: false
   end
 
+  create_table "lit_localization_key_tags", id: :serial, force: :cascade do |t|
+    t.integer "localization_key_id", null: false
+    t.integer "tag_id", null: false
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
+    t.index ["localization_key_id", "tag_id"], name: "index_lit_localization_key_tags_on_key_and_tag", unique: true
+    t.index ["tag_id"], name: "index_lit_localization_key_tags_on_tag_id"
+  end
+
   create_table "lit_localization_keys", id: :serial, force: :cascade do |t|
     t.string "localization_key", limit: 255
     t.datetime "created_at"
@@ -66,6 +87,7 @@ ActiveRecord::Schema.define(version: 2018_11_29_103819) do
     t.boolean "is_starred", default: false
     t.boolean "is_deleted", default: false, null: false
     t.boolean "is_visited_again", default: false, null: false
+    t.date "last_visited_at"
     t.index ["localization_key"], name: "index_lit_localization_keys_on_localization_key", unique: true
   end
 
@@ -100,10 +122,16 @@ ActiveRecord::Schema.define(version: 2018_11_29_103819) do
     t.boolean "sync_complete"
   end
 
+  create_table "lit_tags", id: :serial, force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
+    t.index ["name"], name: "index_lit_tags_on_name", unique: true
+  end
+
   create_table "projects", id: :serial, force: :cascade do |t|
     t.string "name", limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
   end
-
 end

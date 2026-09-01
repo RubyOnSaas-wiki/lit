@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    lit (1.1.6)
+    lit (1.2.0)
       coffee-rails
       emoji_flag
       jquery-rails
@@ -93,7 +93,8 @@ GEM
     benchmark (0.5.0)
     bigdecimal (3.3.1)
     builder (3.3.0)
-    byebug (11.1.3)
+    byebug (13.0.0)
+      reline (>= 0.6.0)
     capybara (3.40.0)
       addressable
       matrix
@@ -272,12 +273,13 @@ GEM
     pp (0.6.3)
       prettyprint
     prettyprint (0.2.0)
-    pry (0.13.1)
+    pry (0.16.0)
       coderay (~> 1.1)
       method_source (~> 1.0)
-    pry-byebug (3.9.0)
-      byebug (~> 11.0)
-      pry (~> 0.13.0)
+      reline (>= 0.6.0)
+    pry-byebug (3.12.0)
+      byebug (~> 13.0)
+      pry (>= 0.13, < 0.17)
     pry-rails (0.3.11)
       pry (>= 0.13.0)
     psych (5.2.6)
@@ -394,6 +396,7 @@ GEM
 
 PLATFORMS
   arm64-darwin-24
+  arm64-darwin-25
 
 DEPENDENCIES
   appraisal (~> 2.4.0)
@@ -409,7 +412,7 @@ DEPENDENCIES
   minitest-vcr (~> 1.4.0)
   mocha
   pg (~> 1.5.9)
-  pry-byebug (~> 3.9.0)
+  pry-byebug (~> 3.9)
   pry-rails
   rails (~> 7.2.2.1)
   rails-controller-testing

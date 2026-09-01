@@ -11,6 +11,18 @@ Lit::Engine.routes.draw do
       end
     end
   end
+  if Lit.ai_api_enabled
+    namespace :api do
+      namespace :v1 do
+        namespace :ai do
+          get 'pending' => 'suggestions#pending'
+          post 'suggestions' => 'suggestions#create'
+          post 'refresh_keys' => 'suggestions#refresh_keys'
+        end
+      end
+    end
+  end
+
   resources :locales, only: [:index, :destroy] do
     put :hide, on: :member
   end
@@ -48,6 +60,16 @@ Lit::Engine.routes.draw do
         get :accept_all
         post :reject_all
       end
+    end
+  end
+
+  resources :ai_suggestions, only: %i[index update destroy] do
+    member do
+      post :accept
+    end
+    collection do
+      post :accept_all
+      delete :reject_all
     end
   end
 

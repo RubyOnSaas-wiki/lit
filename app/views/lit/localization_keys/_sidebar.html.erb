@@ -10,6 +10,16 @@
           <button type="submit" class="button button-default"><%= draw_icon 'search' %></button>
         </div>
       </div>
+      <% tag_options = tag_filter_options.to_a %>
+      <% if tag_options.any? || selected_tag_names.any? %>
+        <div class="form-group tag_filter">
+          <%= label_tag 'tags[]', 'Tags' %>
+          <%= select_tag 'tags[]',
+                         options_for_select(tag_options.map(&:name), selected_tag_names),
+                         multiple: true, class: 'form-control js-tag-filter',
+                         data: { placeholder: 'Filter by tag' } %>
+        </div>
+      <% end %>
     <% end %>
     <ul class="nav nav-pills nav-stacked">
       <li class="<%= "active" if params[:action]=='not_translated' %>">

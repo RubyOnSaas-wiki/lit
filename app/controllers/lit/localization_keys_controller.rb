@@ -1,5 +1,7 @@
 module Lit
   class LocalizationKeysController < ::Lit::ApplicationController
+    include Lit::TagFilterable
+
     before_action :find_localization_scope, except: %i[destroy find_localization]
     before_action :find_localization_key, only: %i[star destroy change_completed restore_deleted]
 
@@ -9,11 +11,14 @@ module Lit
 
     def not_translated
       @scope = @scope.not_completed
+      @tag_options_scope = @tag_options_scope.not_completed
       get_localization_keys
     end
 
     def visited_again
       @scope = @scope.unscope(where: :is_deleted).not_active.visited_again
+      @tag_options_scope =
+        @tag_options_scope.unscope(where: :is_deleted).not_active.visited_again
       get_localization_keys
     end
 
@@ -73,8 +78,18 @@ module Lit
     end
 
     def find_localization_scope
-      @search_options = params.respond_to?(:permit) ? params.permit(*valid_keys) : params.slice(*valid_keys)
+      @search_options =
+        if params.respond_to?(:permit)
+          # `tags` is an array; a flat splat into #permit silently drops it.
+          params.permit(:key, :key_prefix, :order, :tags, tags: [])
+        else
+          params.slice(*valid_keys)
+        end
       @scope = LocalizationKey.distinct.active.preload(localizations: :locale).search(@search_options)
+      # Options for the tag multiselect are computed from everything EXCEPT the
+      # tag filter, otherwise picking one tag hides every tag it does not
+      # co-occur with and OR-ing a second one becomes impossible.
+      @tag_options_scope = LocalizationKey.distinct.active.search(@search_options.except(:tags))
     end
 
     def get_localization_keys
@@ -97,7 +112,11 @@ module Lit
     end
 
     def valid_keys
-      %w[key key_prefix order]
+      %w[key key_prefix order tags]
+    end
+
+    def tag_options_key_scope
+      @tag_options_scope
     end
 
     def grouped_localizations

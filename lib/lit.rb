@@ -15,6 +15,10 @@ module Lit
   mattr_accessor :ignore_yaml_on_startup
   mattr_accessor :api_enabled
   mattr_accessor :api_key
+  # Separate switch and token for the AI translation-suggestion API, so that AI
+  # access can be granted or revoked without touching the environment sync key.
+  mattr_accessor :ai_api_enabled
+  mattr_accessor :ai_api_key
   mattr_accessor :all_translations_are_html_safe
   mattr_accessor :set_last_updated_at_upon_creation
   mattr_accessor :store_request_info

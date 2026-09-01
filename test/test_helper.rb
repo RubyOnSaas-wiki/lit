@@ -12,9 +12,15 @@ require 'rails/test_help'
 require 'capybara/rails'
 require 'database_cleaner'
 require 'test_declarative'
-require 'mocha/setup'
+begin
+  require 'mocha/minitest' # mocha >= 1.5
+rescue LoadError
+  require 'mocha/setup' # mocha < 2.0
+end
 require 'webmock'
 require 'vcr'
+# minitest-vcr / minispec-metadata still reference the pre-5.19 `MiniTest` constant.
+MiniTest = Minitest unless defined?(MiniTest)
 require 'minitest-vcr'
 
 begin
@@ -35,7 +41,12 @@ def load_sample_yml(fname)
   ::I18n.load_path << "#{::File.dirname(__FILE__)}/support/#{fname}"
 end
 
-ActiveSupport::TestCase.fixture_path = ::File.expand_path('../fixtures', __FILE__)
+fixtures_dir = ::File.expand_path('../fixtures', __FILE__)
+if ActiveSupport::TestCase.respond_to?(:fixture_paths=) # rails >= 7.1
+  ActiveSupport::TestCase.fixture_paths = [fixtures_dir]
+else
+  ActiveSupport::TestCase.fixture_path = fixtures_dir
+end
 
 ## do not enforce available locales
 ::I18n.config.enforce_available_locales = false

@@ -1,0 +1,17 @@
+<%= form_tag lit.ai_suggestions_path, method: :get, class: 'form-inline ai_suggestions_filters' do %>
+  <div class="form-group">
+    <%= label_tag :locale, 'Locale', class: 'sr-only' %>
+    <%= select_tag :locale,
+                   options_for_select(Lit::Locale.ordered.pluck(:locale), @search_options[:locale]),
+                   include_blank: 'All locales', class: 'form-control' %>
+  </div>
+  <div class="form-group ai_suggestions_tag_filter">
+    <%= label_tag 'tags[]', 'Tags', class: 'sr-only' %>
+    <%= select_tag 'tags[]',
+                   options_for_select(tag_filter_options.map(&:name), selected_tag_names),
+                   multiple: true, class: 'form-control js-tag-filter',
+                   data: { placeholder: 'Filter by tag' } %>
+  </div>
+  <button type="submit" class="button button-default"><%= draw_icon 'search' %> Filter</button>
+  <%= link_to 'clear', lit.ai_suggestions_path, class: 'button button-sm' %>
+<% end %>

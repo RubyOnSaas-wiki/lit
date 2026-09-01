@@ -1,0 +1,4 @@
+$('.ai_suggestion_row[data-id=<%= @ai_suggestion.id %>]').remove();
+$('.ai_suggestion_group').filter(function () {
+  return $(this).find('.ai_suggestion_row').length === 0;
+}).remove();

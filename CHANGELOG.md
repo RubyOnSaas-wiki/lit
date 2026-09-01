@@ -5,6 +5,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-01
+### Added
+- AI translation suggestions: an authorized agent can push proposed translations
+  through a new token-guarded API, and a human reviews them on the new
+  "AI translated" tab before anything reaches the application. A proposal shows the
+  current value next to the proposal, can be edited, accepted one at a time or in
+  bulk (in the background), or rejected. Accepting writes the translation and marks
+  it ready for synchronization.
+  - `Lit.ai_api_enabled` and `Lit.ai_api_key` - both required; the key is separate
+    from `Lit.api_key` so AI access can be revoked without breaking environment sync.
+  - `GET /api/v1/ai/pending`, `POST /api/v1/ai/suggestions`, `POST /api/v1/ai/refresh_keys`.
+- Tags on localization keys, set by the AI API, with a searchable multiselect filter
+  on the localization key lists and on the AI tab. The filter offers only tags present
+  in the current tab.
+
+### Fixed
+- The "batch touch" link now forwards the whole active filter. It previously rebuilt
+  its scope from `key`/`key_prefix` only, so with any other filter active it marked far
+  more keys for synchronization than the confirm dialog claimed.
+- The test suite now runs on Ruby 3.2 / Rails 7.2: relaxed the `pry-byebug` pin (pry 0.13
+  calls `Object#=~`, removed in Ruby 3.2), `mocha/setup` -> `mocha/minitest`, the renamed
+  `MiniTest` constant, and `fixture_path=` -> `fixture_paths=`. The dummy app called
+  `Lit.init` at initializer top level, which Rails 7 forbids.
+
 ## [WIP]
 - Efforts to use Vanilla JS and remove jQuery [WIP]
 - Fix for `Undefined method 'id' for False class` error in view partial [WIP]

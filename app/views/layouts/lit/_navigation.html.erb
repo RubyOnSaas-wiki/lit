@@ -11,6 +11,17 @@
   <ul class="nav navbar-nav">
     <li><%= link_to "Translate!", lit.not_translated_localization_keys_path %></li>
     <li><%= link_to "Synchronize", lit.sources_path %></li>
+    <% if lit_ai_suggestions_available? %>
+      <li>
+        <%= link_to lit.ai_suggestions_path do %>
+          AI translated
+          <% pending_count = lit_pending_ai_suggestions_count %>
+          <% if pending_count.positive? %>
+            <span class="badge"><%= pending_count %></span>
+          <% end %>
+        <% end %>
+      </li>
+    <% end %>
     <li class="dropdown">
       <a href="#" class="dropdown-toggle" data-toggle="dropdown">
         Settings

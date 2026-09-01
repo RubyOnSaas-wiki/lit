@@ -18,6 +18,9 @@ module Lit
 
     ## ASSOCIATIONS
     has_many :localizations, dependent: :destroy
+    has_many :localization_key_tags, dependent: :delete_all
+    has_many :tags, through: :localization_key_tags
+    has_many :ai_suggestions, class_name: 'Lit::AiSuggestion', dependent: :destroy
 
     ## VALIDATIONS
     validates :localization_key,

@@ -32,6 +32,7 @@ module Lit
 
       def generate_api_key
         @api_key = SecureRandom.base64 32
+        @ai_api_key = SecureRandom.base64 32
       end
 
       def add_lit_initializer

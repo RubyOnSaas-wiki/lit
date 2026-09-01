@@ -10,6 +10,7 @@ class LocalizationKeySearchQuery
     order_data
     search_key_prefix
     search_key
+    search_tags
     search_completed
     @scope
   end
@@ -47,6 +48,12 @@ class LocalizationKeySearchQuery
         translated_value_col.matches(query)
       )
     ).or(localization_key_col.matches(q_underscore))
+  end
+
+  def search_tags
+    names = Array(@params[:tags]).map { |name| Lit::Tag.normalize(name) }.reject(&:blank?)
+    return if names.empty?
+    @scope = @scope.joins(:tags).where(Lit::Tag.table_name => { name: names })
   end
 
   def search_completed

@@ -6,6 +6,7 @@ module Lit
 
     ## ASSOCIATIONS
     has_many :localizations, dependent: :destroy
+    has_many :ai_suggestions, class_name: 'Lit::AiSuggestion', dependent: :destroy
 
     ## VALIDATIONS
     validates :locale, presence: true, uniqueness: true

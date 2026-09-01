@@ -1,5 +1,7 @@
 <div class="col-12 text-right">
-  <%= link_to "batch touch", lit.batch_touch_localization_keys_path(key: params[:key], key_prefix: params[:key_prefix]), method: :post, remote: true, class: 'button button-sm button-primary', data: { confirm: 'This will "touch" all search results making them subject of synchronization. Proceed?'} %>
+  <%# forward the whole filter, tags included: batch_touch rebuilds the scope from
+      these params and would otherwise touch far more keys than are on screen %>
+  <%= link_to "batch touch", lit.batch_touch_localization_keys_path(@search_options.to_hash), method: :post, remote: true, class: 'button button-sm button-primary', data: { confirm: "This will \"touch\" all #{@scope.count} search result(s) making them subject of synchronization. Proceed?"} %>
 </div>
 <table class="table mt-1">
   <%- @localization_keys.each do |lk| %>

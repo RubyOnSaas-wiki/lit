@@ -1,0 +1,2 @@
+$('.ai_suggestion_row[data-id=<%= @ai_suggestion.id %>]')
+  .replaceWith('<%= escape_javascript(render("suggestion", suggestion: @ai_suggestion)) %>');
