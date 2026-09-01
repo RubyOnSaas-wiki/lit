@@ -31,15 +31,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_01_120100) do
     t.index ["reset_password_token"], name: "index_admins_on_reset_password_token", unique: true
   end
 
-  create_table "lit_ai_suggestions", id: :serial, force: :cascade do |t|
+  create_table "lit_ai_suggestions", force: :cascade do |t|
     t.integer "localization_key_id", null: false
     t.integer "locale_id", null: false
     t.text "suggested_value"
     t.text "base_value"
     t.string "provider"
     t.boolean "is_edited", default: false, null: false
-    t.datetime "created_at", precision: nil
-    t.datetime "updated_at", precision: nil
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["locale_id"], name: "index_lit_ai_suggestions_on_locale_id"
     t.index ["localization_key_id", "locale_id"], name: "index_lit_ai_suggestions_on_key_and_locale", unique: true
   end
@@ -70,11 +70,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_01_120100) do
     t.boolean "is_hidden", default: false
   end
 
-  create_table "lit_localization_key_tags", id: :serial, force: :cascade do |t|
+  create_table "lit_localization_key_tags", force: :cascade do |t|
     t.integer "localization_key_id", null: false
-    t.integer "tag_id", null: false
-    t.datetime "created_at", precision: nil
-    t.datetime "updated_at", precision: nil
+    t.bigint "tag_id", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["localization_key_id", "tag_id"], name: "index_lit_localization_key_tags_on_key_and_tag", unique: true
     t.index ["tag_id"], name: "index_lit_localization_key_tags_on_tag_id"
   end
@@ -122,10 +122,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_01_120100) do
     t.boolean "sync_complete"
   end
 
-  create_table "lit_tags", id: :serial, force: :cascade do |t|
+  create_table "lit_tags", force: :cascade do |t|
     t.string "name", null: false
-    t.datetime "created_at", precision: nil
-    t.datetime "updated_at", precision: nil
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["name"], name: "index_lit_tags_on_name", unique: true
   end
 

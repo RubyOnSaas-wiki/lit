@@ -1,4 +1,10 @@
-class LitCreateLitTags < ActiveRecord::Migration[4.2]
+# Migration[5.2] rather than the [4.2] the older lit migrations use: in 4.2
+# compatibility mode new tables get a plain `integer` primary key, which hosts
+# running online_migrations reject as a wraparound risk. 5.2 is the gem's minimum
+# supported Rails, so this is valid on every version lit supports.
+# The foreign key columns stay `integer`: the lit tables they point at have
+# `integer` (serial) primary keys.
+class LitCreateLitTags < ActiveRecord::Migration[5.2]
   def up
     unless table_exists?(:lit_tags)
       create_table :lit_tags do |t|
@@ -13,7 +19,7 @@ class LitCreateLitTags < ActiveRecord::Migration[4.2]
 
     create_table :lit_localization_key_tags do |t|
       t.integer :localization_key_id, null: false
-      t.integer :tag_id, null: false
+      t.bigint :tag_id, null: false # lit_tags.id is bigint; the lit_* tables it joins are not
 
       t.timestamps
     end

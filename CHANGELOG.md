@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-09-01
+### Fixed
+- The two new migrations declared `ActiveRecord::Migration[4.2]`, matching the older
+  migrations in this gem. In 4.2 compatibility mode new tables get a plain `integer`
+  primary key, which host applications running `online_migrations` reject as an ID
+  wraparound risk. They now declare `Migration[5.2]` (the gem's minimum supported Rails),
+  so primary keys are `bigint`. Foreign key columns stay `integer` because the existing
+  lit tables they reference have `integer` primary keys; `lit_localization_key_tags.tag_id`
+  is `bigint` to match the new `lit_tags.id`.
+
 ## [1.2.0] - 2026-09-01
 ### Added
 - AI translation suggestions: an authorized agent can push proposed translations

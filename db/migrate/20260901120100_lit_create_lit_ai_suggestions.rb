@@ -1,4 +1,10 @@
-class LitCreateLitAiSuggestions < ActiveRecord::Migration[4.2]
+# Migration[5.2] rather than the [4.2] the older lit migrations use: in 4.2
+# compatibility mode new tables get a plain `integer` primary key, which hosts
+# running online_migrations reject as a wraparound risk. 5.2 is the gem's minimum
+# supported Rails, so this is valid on every version lit supports.
+# The foreign key columns stay `integer`: the lit tables they point at have
+# `integer` (serial) primary keys.
+class LitCreateLitAiSuggestions < ActiveRecord::Migration[5.2]
   def up
     return if table_exists?(:lit_ai_suggestions)
 
