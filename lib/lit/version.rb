@@ -9,8 +9,8 @@ module Lit
 
   module Version
     MAJOR = 1
-    MINOR = 2
-    TINY = 6
+    MINOR = 3
+    TINY = 0
 
     STRING = [MAJOR, MINOR, TINY].compact.join('.')
   end

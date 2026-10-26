@@ -24,6 +24,12 @@
 }
 .ai-intro details li { margin-bottom: 2px; }
 
+.ai-tabs { margin-bottom: 8px; }
+.ai-tabs > li > a { padding: 6px 14px; font-size: 13px; }
+.ai-tabs .badge { font-size: 11px; font-weight: normal; background: #999; color: #fff; }
+.ai-tabs > li.active .badge { background: #337ab7; color: #fff; }
+.ai-tab-hint { color: #777; font-size: 12px; margin: 0 0 10px; }
+
 .ai-toolbar {
   display: flex;
   flex-wrap: wrap;

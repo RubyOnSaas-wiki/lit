@@ -5,6 +5,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-26
+### Added
+- AI translated tab split into **New** and **Corrected**. New holds keys with no
+  translation yet, or still showing the English text; Corrected holds proposals that reword
+  a translation the application already serves. Accept all / Reject all act only on the
+  open tab, and the tag filter offers only that tab's tags. Backed by a new
+  `lit_ai_suggestions.is_correction` column, recorded when the proposal is made.
+- `POST /lit/api/v1/ai/lookup`: what the application serves now for up to 500 keys, or for
+  every key under a prefix (paged), per locale, with a `missing` / `same_as_source` /
+  `translated` status, the key's tags and any pending proposal. An agent judging from the
+  host's YAML files cannot see translations made in Lit, which never reach those files.
+- `rake lit:ai_suggestions:reclassify` sorts proposals recorded before 1.3.0 into the two
+  tabs and removes the ones identical to the current value.
+
+### Changed
+- `POST /lit/api/v1/ai/suggestions` no longer stores a proposal identical to the value
+  already served; it is reported in `skipped` with reason `unchanged`. The response also
+  counts `corrections` among the created and updated proposals.
+- Reject all deletes the tab's proposals in one statement instead of one per row, so a tab
+  of thousands returns at once. Accept all was already a background job working in
+  batches of 200.
+
 ## [1.2.6] - 2026-09-01
 ### Changed
 - AI translated tab: back to one table per localization key, each with its own header row,

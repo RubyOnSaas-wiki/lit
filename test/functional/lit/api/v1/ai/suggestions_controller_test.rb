@@ -140,6 +140,29 @@ module Lit
       assert_equal 'Handredigerad', Lit::AiSuggestion.sole.suggested_value
     end
 
+    test 'skips a suggestion identical to the value already served' do
+      Lit.init.cache.update_cache('sv.hr.tree.title', 'Organisationsträd')
+
+      post :create, params: payload, as: :json
+
+      body = JSON.parse(response.body)
+      assert_equal 0, body['created']
+      assert_equal 'unchanged', body['skipped'].first['reason']
+      assert_equal 0, Lit::AiSuggestion.count
+    end
+
+    test 'counts the suggestions that correct an existing translation' do
+      Lit.init.cache.update_cache('en.hr.tree.title', 'Organisation tree')
+      Lit.init.cache.update_cache('sv.hr.tree.title', 'Organisationsschema')
+
+      post :create, params: payload, as: :json
+
+      body = JSON.parse(response.body)
+      assert_equal 1, body['created']
+      assert_equal 1, body['corrections']
+      assert Lit::AiSuggestion.sole.is_correction
+    end
+
     test 'refuses an oversized batch' do
       many = Array.new(501) { { key: 'hr.tree.title', locale: 'sv', value: 'x' } }
       post :create, params: { suggestions: many }, as: :json
@@ -200,6 +223,98 @@ module Lit
     test 'requires a locale' do
       get :pending, as: :json
       assert_response :bad_request
+    end
+
+    # --- lookup ------------------------------------------------------------
+
+    def lookup_entry(body, key)
+      body['keys'].find { |entry| entry['key'] == key }
+    end
+
+    test 'reports what each locale serves and whether it is translated' do
+      Lit::Locale.where(locale: 'da').first_or_create!
+      Lit.init.cache.update_cache('en.hr.tree.title', 'Organisation tree')
+      Lit.init.cache.update_cache('sv.hr.tree.title', 'Organisationsschema')
+      Lit.init.cache.update_cache('da.hr.tree.title', 'Organisation tree')
+
+      post :lookup, params: { keys: ['hr.tree.title'] }, as: :json
+
+      assert_response :success
+      translations = lookup_entry(JSON.parse(response.body), 'hr.tree.title')['translations']
+      assert_equal({ 'value' => 'Organisation tree', 'status' => 'translated', 'suggestion' => nil },
+                   translations['en'])
+      assert_equal 'translated', translations['sv']['status']
+      assert_equal 'Organisationsschema', translations['sv']['value']
+      assert_equal 'same_as_source', translations['da']['status']
+    end
+
+    test 'reports a locale with no value as missing' do
+      post :lookup, params: { keys: ['hr.tree.title'], locales: ['sv'] }, as: :json
+
+      translations = lookup_entry(JSON.parse(response.body), 'hr.tree.title')['translations']
+      assert_equal ['sv'], translations.keys
+      assert_equal 'missing', translations['sv']['status']
+      assert_nil translations['sv']['value']
+    end
+
+    test 'includes a pending suggestion and the key tags' do
+      @key.tags << Lit::Tag.create!(name: 'hr-tree')
+      Lit::AiSuggestion.propose(localization_key: @key, locale: @locale, value: 'Förslag')
+
+      post :lookup, params: { keys: ['hr.tree.title'] }, as: :json
+
+      entry = lookup_entry(JSON.parse(response.body), 'hr.tree.title')
+      assert_equal ['hr-tree'], entry['tags']
+      assert_equal 'Förslag', entry['translations']['sv']['suggestion']
+    end
+
+    test 'lists keys Lit does not know separately' do
+      post :lookup, params: { keys: ['hr.tree.title', 'no.such.key'] }, as: :json
+
+      body = JSON.parse(response.body)
+      assert_equal ['hr.tree.title'], body['keys'].map { |entry| entry['key'] }
+      assert_equal ['no.such.key'], body['unknown_keys']
+    end
+
+    test 'looks up a whole namespace by prefix' do
+      Lit::LocalizationKey.create!(localization_key: 'hr.tree.subtitle')
+      Lit::LocalizationKey.create!(localization_key: 'hr.treehouse')
+      Lit::LocalizationKey.create!(localization_key: 'billing.invoice')
+
+      post :lookup, params: { prefix: 'hr.tree' }, as: :json
+
+      body = JSON.parse(response.body)
+      assert_equal %w[hr.tree.subtitle hr.tree.title], body['keys'].map { |entry| entry['key'] }
+      assert_equal 2, body['total']
+    end
+
+    test 'pages a prefix lookup' do
+      3.times { |i| Lit::LocalizationKey.create!(localization_key: "hr.tree.item#{i}") }
+
+      post :lookup, params: { prefix: 'hr.tree', limit: 2, page: 2 }, as: :json
+
+      body = JSON.parse(response.body)
+      assert_equal %w[hr.tree.item2 hr.tree.title], body['keys'].map { |entry| entry['key'] }
+      assert_equal 4, body['total']
+    end
+
+    test 'lookup needs either keys or a prefix' do
+      post :lookup, params: {}, as: :json
+      assert_response :bad_request
+
+      post :lookup, params: { keys: ['hr.tree.title'], prefix: 'hr' }, as: :json
+      assert_response :bad_request
+    end
+
+    test 'refuses a lookup of too many keys' do
+      post :lookup, params: { keys: Array.new(501) { |i| "k#{i}" } }, as: :json
+      assert_response :payload_too_large
+    end
+
+    test 'lookup requires the ai token' do
+      authorize_with 'sync-key'
+      post :lookup, params: { keys: ['hr.tree.title'] }, as: :json
+      assert_response :unauthorized
     end
 
     # --- refresh_keys ------------------------------------------------------

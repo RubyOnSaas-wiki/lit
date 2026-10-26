@@ -17,6 +17,7 @@ Lit::Engine.routes.draw do
         namespace :ai do
           get 'pending' => 'suggestions#pending'
           post 'suggestions' => 'suggestions#create'
+          post 'lookup' => 'suggestions#lookup'
           post 'refresh_keys' => 'suggestions#refresh_keys'
         end
       end

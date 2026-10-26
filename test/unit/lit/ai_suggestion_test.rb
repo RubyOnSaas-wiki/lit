@@ -95,5 +95,98 @@ module Lit
 
       assert_equal 0, Lit::AiSuggestion.pending.count
     end
+
+    # --- new translation or correction --------------------------------------
+
+    def serve(locale, value)
+      Lit.init.cache.update_cache("#{locale}.#{@key.localization_key}", value)
+    end
+
+    test 'a proposal for a key with no value yet is a new translation' do
+      _status, suggestion = propose
+
+      assert_not suggestion.is_correction
+    end
+
+    test 'a proposal for a key still showing the English text is a new translation' do
+      serve('en', 'Organisation tree')
+      serve('sv', 'Organisation tree')
+
+      _status, suggestion = propose
+
+      assert_not suggestion.is_correction
+    end
+
+    test 'a proposal for a key that is already translated is a correction' do
+      serve('en', 'Organisation tree')
+      serve('sv', 'Organisationsschema')
+
+      _status, suggestion = propose
+
+      assert suggestion.is_correction
+    end
+
+    test 'an English proposal for a key that already has English text is a correction' do
+      en = Lit::Locale.where(locale: 'en').first_or_create!
+      serve('en', 'Organisation tre')
+
+      _status, suggestion = Lit::AiSuggestion.propose(localization_key: @key, locale: en,
+                                                      value: 'Organisation tree')
+
+      assert suggestion.is_correction
+    end
+
+    test 'an English proposal for a key with no English text is a new translation' do
+      en = Lit::Locale.where(locale: 'en').first_or_create!
+
+      _status, suggestion = Lit::AiSuggestion.propose(localization_key: @key, locale: en,
+                                                      value: 'Organisation tree')
+
+      assert_not suggestion.is_correction
+    end
+
+    test 'proposing the value already served stores nothing' do
+      serve('sv', 'Organisationsträd')
+
+      status, _suggestion = propose(value: ' Organisationsträd ')
+
+      assert_equal :unchanged, status
+      assert_equal 0, Lit::AiSuggestion.count
+    end
+
+    test 'proposing the value already served leaves an earlier proposal alone' do
+      _status, earlier = propose(value: 'Organisationsschema')
+      serve('sv', 'Organisationsträd')
+
+      status, _suggestion = propose(value: 'Organisationsträd')
+
+      assert_equal :unchanged, status
+      assert_equal 'Organisationsschema', earlier.reload.suggested_value
+    end
+
+    test 'reclassify sorts existing proposals and drops the ones that change nothing' do
+      _status, gap = propose(value: 'Organisationsträd')
+      other = Lit::LocalizationKey.create!(localization_key: 'ai.suggestion.other')
+      _status, same = Lit::AiSuggestion.propose(localization_key: other, locale: @locale, value: 'Samma')
+      # translations a person made after the proposals were recorded
+      serve('sv', 'Organisationsschema')
+      Lit.init.cache.update_cache("sv.#{other.localization_key}", 'Samma')
+
+      result = Lit::AiSuggestion.reclassify_all
+
+      assert gap.reload.is_correction
+      assert_not Lit::AiSuggestion.exists?(same.id)
+      assert_equal({ new: 0, corrected: 1, removed_unchanged: 1 }, result)
+    end
+
+    test 'reclassify keeps a human-edited proposal even when it matches the current value' do
+      _status, suggestion = propose(value: 'machine')
+      suggestion.update!(suggested_value: 'Organisationsträd', is_edited: true)
+      serve('sv', 'Organisationsträd')
+
+      Lit::AiSuggestion.reclassify_all
+
+      assert Lit::AiSuggestion.exists?(suggestion.id)
+    end
   end
 end

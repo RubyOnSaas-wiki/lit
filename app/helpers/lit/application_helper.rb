@@ -6,7 +6,8 @@ module Lit
       return @_lit_ai_suggestions_available unless @_lit_ai_suggestions_available.nil?
       @_lit_ai_suggestions_available =
         begin
-          Lit::AiSuggestion.table_exists? && Lit::Tag.table_exists?
+          Lit::AiSuggestion.table_exists? && Lit::Tag.table_exists? &&
+            Lit::AiSuggestion.column_names.include?('is_correction')
         rescue ::ActiveRecord::ActiveRecordError
           false
         end

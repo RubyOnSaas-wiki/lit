@@ -9,6 +9,7 @@
   <details>
     <summary>How this works</summary>
     <ul>
+      <li><strong>New</strong> holds keys with no translation yet, or still showing the English text. <strong>Corrected</strong> holds keys that already have a translation, where the AI suggests different wording.</li>
       <li><strong>Current value</strong> is what the application serves right now. If somebody edits it in <em>Translate!</em>, it changes here too.</li>
       <li><strong>Proposal</strong> is what the AI suggests. You can edit it before accepting.</li>
       <li><strong>Accept</strong> writes the proposal into the translations, marks it ready for synchronization, and removes it from this tab.</li>
@@ -18,10 +19,29 @@
   </details>
 </div>
 
+<ul class="nav nav-tabs ai-tabs">
+  <% [%w[new New], %w[corrected Corrected]].each do |kind, label| %>
+    <li class="<%= 'active' if @search_options[:kind] == kind %>">
+      <%= link_to lit.ai_suggestions_path(@search_options.to_hash.merge('kind' => kind)) do %>
+        <%= label %> <span class="badge"><%= @kind_counts[kind] %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+<p class="ai-tab-hint">
+  <% if @search_options[:kind] == 'corrected' %>
+    These keys are already translated. Accepting replaces the current value with the AI's wording.
+  <% else %>
+    These keys have no translation yet, or still show the English text.
+  <% end %>
+</p>
+
 <%= render 'filters' %>
 
 <% if @ai_suggestions.to_a.empty? %>
-  <p class="ai-empty">No AI proposals are waiting.</p>
+  <p class="ai-empty">
+    <%= @search_options[:kind] == 'corrected' ? 'No corrections are waiting.' : 'No new translations are waiting.' %>
+  </p>
 <% else %>
   <% @ai_suggestions.group_by(&:localization_key).each do |localization_key, suggestions| %>
     <table class="table mt-1 ai-group">

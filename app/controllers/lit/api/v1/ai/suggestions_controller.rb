@@ -6,6 +6,7 @@ module Lit
       module Ai
         class SuggestionsController < BaseController
           MAX_BATCH_SIZE = 500
+          MAX_LOOKUP_KEYS = 500
           MAX_PAGE_SIZE = 500
           DEFAULT_PAGE_SIZE = 100
 
@@ -28,12 +29,46 @@ module Lit
             }
           end
 
+          # POST /api/v1/ai/lookup
+          # What the application serves right now for the given keys (or every
+          # key under a prefix), per locale. The host's YAML files are not that:
+          # translations made in Lit never reach them, so an agent judging from
+          # the files re-proposes work a person already did.
+          def lookup
+            names = Array(params[:keys]).map(&:to_s).reject(&:blank?)
+            prefix = params[:prefix].to_s.strip.chomp('.')
+            return render_error('pass either keys or prefix') if names.empty? == prefix.empty?
+            return head(:payload_too_large) if names.size > MAX_LOOKUP_KEYS
+
+            if names.any?
+              keys = Lit::LocalizationKey.active.where(localization_key: names)
+                                         .order(:localization_key).preload(:tags).to_a
+              total = keys.size
+              unknown = names.uniq - keys.map(&:localization_key)
+            else
+              scope = prefix_scope(prefix)
+              total = scope.count
+              keys = scope.order(:localization_key).limit(page_size).offset(page_offset).preload(:tags).to_a
+              unknown = []
+            end
+            locales = lookup_locales
+            suggestions = Lit::AiSuggestion.where(localization_key_id: keys.map(&:id), locale_id: locales.map(&:id))
+                                           .index_by { |suggestion| [suggestion.localization_key_id, suggestion.locale_id] }
+
+            render json: {
+              source_locale: Lit::AiSuggestion::SOURCE_LOCALE,
+              total: total,
+              keys: keys.map { |key| lookup_entry(key, locales, suggestions) },
+              unknown_keys: unknown
+            }
+          end
+
           # POST /api/v1/ai/suggestions
           def create
             items = Array(params[:suggestions])
             return head(:payload_too_large) if items.size > MAX_BATCH_SIZE
 
-            result = { created: 0, updated: 0, skipped: [], rejected: [] }
+            result = { created: 0, updated: 0, corrections: 0, skipped: [], rejected: [] }
             items.each { |item| process_item(item, result) }
             render json: result
           end
@@ -90,14 +125,43 @@ module Lit
           def pending_entry(key, locale, source_locale, suggestion)
             { key: key.localization_key,
               locale: locale.locale,
-              source_value: source_locale && cached_value(source_locale, key),
-              current_value: cached_value(locale, key),
+              source_value: source_locale && cached_value(source_locale.locale, key),
+              current_value: cached_value(locale.locale, key),
               tags: key.tags.map(&:name),
               existing_suggestion: suggestion&.suggested_value }
           end
 
-          def cached_value(locale, key)
-            Lit.init.cache["#{locale.locale}.#{key.localization_key}"]
+          def lookup_entry(key, locales, suggestions)
+            source_value = cached_value(Lit::AiSuggestion::SOURCE_LOCALE, key)
+            translations = locales.each_with_object({}) do |locale, all|
+              value = cached_value(locale.locale, key)
+              all[locale.locale] = {
+                value: value,
+                status: Lit::AiSuggestion.translation_status(locale.locale, value, source_value),
+                suggestion: suggestions[[key.id, locale.id]]&.suggested_value
+              }
+            end
+            { key: key.localization_key, tags: key.tags.map(&:name), translations: translations }
+          end
+
+          def lookup_locales
+            requested = Array(params[:locales]).map(&:to_s).reject(&:blank?)
+            scope = requested.any? ? Lit::Locale.where(locale: requested) : Lit::Locale.visible
+            scope.ordered.to_a
+          end
+
+          # The key itself and everything below it, but not a sibling that only
+          # shares the leading characters (hr.tree must not match hr.treehouse).
+          def prefix_scope(prefix)
+            column = "#{Lit::LocalizationKey.table_name}.localization_key"
+            Lit::LocalizationKey.active.where(
+              "#{column} = :exact OR #{column} LIKE :below",
+              exact: prefix, below: "#{Lit::LocalizationKey.sanitize_sql_like(prefix)}.%"
+            )
+          end
+
+          def cached_value(locale_code, key)
+            Lit.init.cache["#{locale_code}.#{key.localization_key}"]
           end
 
           def process_item(item, result)
@@ -108,15 +172,16 @@ module Lit
             locale = find_locale(item[:locale])
             return reject(result, item, 'unknown_locale') if locale.nil?
 
-            status, _suggestion = Lit::AiSuggestion.propose(
+            status, suggestion = Lit::AiSuggestion.propose(
               localization_key: key, locale: locale,
               value: item[:value], provider: params[:provider]
             )
             attach_tags(key, item[:tags])
 
             case status
-            when :created then result[:created] += 1
-            when :updated then result[:updated] += 1
+            when :created, :updated
+              result[status] += 1
+              result[:corrections] += 1 if suggestion.is_correction?
             else result[:skipped] << entry(item, status.to_s)
             end
           end

@@ -490,3 +490,36 @@ One environment note: elvium runs ActiveJob `:inline` in development, so `refres
 completes before the response is written and the guard is already released. `:sidekiq` is
 configured in `config/application.rb` for every other environment, which is where the guard
 does its work.
+
+## 13. Addendum 2026-10-26: New vs Corrected, and reading what Lit serves (1.3.0)
+
+**What went wrong.** The i18n automation judged a string untranslated by reading the host's
+`config/locales/da.yml` / `sv.yml`. Translations made in Lit live only in the database and never
+reach those files, so the agent re-proposed strings a person had already translated. Pre-prod
+audit on 2026-10-23: of 1204 pending proposals, 397 were identical to the live value, 497 were a
+different wording of an existing human translation, and only about 290 filled a real gap.
+
+**Changes.**
+
+1. `lit_ai_suggestions.is_correction` (boolean, default false). Set by `AiSuggestion.propose`
+   from the value served at proposal time: `true` when the key already has a translation in
+   that locale, i.e. the value is present and, for a non-English locale, differs from the
+   English source. Missing, or still the English text, is a new translation.
+   `AiSuggestion.translation_status` is the single definition, shared with the API.
+2. `propose` returns `:unchanged` and stores nothing when the value equals what is served
+   (surrounding whitespace ignored). The API reports it in `skipped`, and counts
+   `corrections` among created and updated.
+3. `POST /lit/api/v1/ai/lookup` with `keys` (max 500) or `prefix` (the key and everything below
+   it, paged with `limit` / `page`, `total` in the response), optional `locales`. Per key: tags
+   and, per locale, `value`, `status` (`missing` / `same_as_source` / `translated`) and any
+   pending `suggestion`. Values come from the Lit cache, like the tab. POST because a key list
+   does not fit in a URL.
+4. The AI translated tab has two tabs, **New** and **Corrected**, with counts under the rest of
+   the filter. `kind` is always one of the two (default `new`), so Accept all / Reject all and the
+   tag options never cross tabs.
+5. `rake lit:ai_suggestions:reclassify` sorts proposals made before 1.3.0 against the current
+   values and removes non-edited proposals identical to them.
+
+**Not changed.** `GET pending` still treats keys translated only through YAML defaults
+(`is_changed = false`) as pending. The automation never called it; `lookup` replaces it for
+that purpose.

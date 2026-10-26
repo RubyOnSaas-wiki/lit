@@ -32,6 +32,13 @@ module Lit
       _s, @billing_suggestion = Lit::AiSuggestion.propose(
         localization_key: @billing_key, locale: @da, value: 'Faktura'
       )
+      # a key a person already translated: the AI only rewords it
+      @menu_key = Lit::LocalizationKey.create!(localization_key: 'hr.menu.people')
+      @menu_key.tags << Lit::Tag.create!(name: 'hr-menu')
+      Lit.init.cache.update_cache('sv.hr.menu.people', 'Personal')
+      _s, @correction = Lit::AiSuggestion.propose(
+        localization_key: @menu_key, locale: @sv, value: 'Medarbetare'
+      )
     end
 
     teardown do
@@ -121,16 +128,16 @@ module Lit
 
     test 'accept all enqueues a background job scoped to the current filter' do
       assert_enqueued_with(job: Lit::AcceptAiSuggestionsJob,
-                           args: [{ 'tags' => ['billing'] }]) do
+                           args: [{ 'tags' => ['billing'], 'kind' => 'new' }]) do
         post :accept_all, params: { tags: ['billing'] }
       end
-      assert_redirected_to ai_suggestions_path(tags: ['billing'])
+      assert_redirected_to ai_suggestions_path(tags: ['billing'], kind: 'new')
     end
 
     test 'accept all does not accept anything inline' do
       post :accept_all, params: {}
 
-      assert_equal 2, Lit::AiSuggestion.count
+      assert_equal 3, Lit::AiSuggestion.count
     end
 
     test 'reject all destroys only the filtered proposals' do
@@ -149,6 +156,73 @@ module Lit
       assert Lit::AiSuggestion.exists?(@hr_suggestion.id)
       assert_equal 'Faktura',
                    @billing_key.localizations.find_by(locale_id: @da.id).translated_value
+    end
+
+    # --- New | Corrected tabs ------------------------------------------------
+
+    test 'opens on new translations, without corrections of existing ones' do
+      get :index
+
+      assert_equal 'new', assigns(:search_options)[:kind]
+      assert_not_includes assigns(:ai_suggestions).to_a, @correction
+    end
+
+    test 'the corrected tab lists only corrections' do
+      get :index, params: { kind: 'corrected' }
+
+      assert_equal [@correction], assigns(:ai_suggestions).to_a
+    end
+
+    test 'an unknown tab falls back to new translations' do
+      get :index, params: { kind: 'everything' }
+
+      assert_equal 'new', assigns(:search_options)[:kind]
+    end
+
+    test 'each tab shows its count under the rest of the filter' do
+      get :index, params: { locale: 'sv' }
+
+      assert_equal({ 'new' => 1, 'corrected' => 1 }, assigns(:kind_counts))
+      assert_select 'ul.ai-tabs li.active a[href*="kind=new"]'
+      assert_select 'ul.ai-tabs a[href*="kind=corrected"][href*="locale=sv"]'
+    end
+
+    test 'filtering keeps you on the open tab' do
+      get :index, params: { kind: 'corrected' }
+
+      assert_select 'form.ai-toolbar input[type=hidden][name=kind][value=corrected]'
+    end
+
+    test 'the tag filter offers only tags on the open tab' do
+      get :index, params: { kind: 'corrected' }
+
+      assert_equal %w[hr-menu], @controller.send(:tag_filter_options).map(&:name)
+    end
+
+    test 'accept all on the corrected tab accepts only corrections' do
+      perform_enqueued_jobs do
+        post :accept_all, params: { kind: 'corrected' }
+      end
+
+      assert_not Lit::AiSuggestion.exists?(@correction.id)
+      assert Lit::AiSuggestion.exists?(@hr_suggestion.id)
+      assert Lit::AiSuggestion.exists?(@billing_suggestion.id)
+    end
+
+    test 'reject all removes a large tab in a single statement' do
+      deletes = []
+      counter = lambda { |*, payload| deletes << payload[:sql] if payload[:sql] =~ /\ADELETE/i }
+      ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
+        delete :reject_all, params: { kind: 'new' }
+      end
+
+      assert_equal 1, deletes.size
+    end
+
+    test 'reject all on the new tab leaves corrections alone' do
+      delete :reject_all, params: { kind: 'new' }
+
+      assert_equal [@correction], Lit::AiSuggestion.all.to_a
     end
 
     test 'inherits host authentication from Lit::ApplicationController' do

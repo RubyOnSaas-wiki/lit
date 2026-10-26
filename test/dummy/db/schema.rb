@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_01_120100) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_26_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -40,6 +40,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_01_120100) do
     t.boolean "is_edited", default: false, null: false
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
+    t.boolean "is_correction", default: false, null: false
     t.index ["locale_id"], name: "index_lit_ai_suggestions_on_locale_id"
     t.index ["localization_key_id", "locale_id"], name: "index_lit_ai_suggestions_on_key_and_locale", unique: true
   end

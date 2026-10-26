@@ -78,6 +78,15 @@ namespace :lit do
   desc "[DEPRECATED - use lit:warm_up_keys instead] #{warm_up_keys_desc}"
   task raw_import: :warm_up_keys
 
+  desc 'Sorts pending AI proposals into New and Corrected against what the application ' \
+       'serves now, and removes the ones identical to the current value. Run once after ' \
+       'upgrading to 1.3.0; safe to run again.'
+  task 'ai_suggestions:reclassify' => :environment do
+    result = Lit::AiSuggestion.reclassify_all
+    puts "New: #{result[:new]}, Corrected: #{result[:corrected]}, " \
+         "removed as unchanged: #{result[:removed_unchanged]}"
+  end
+
   desc 'Remove all translations'
   task clear: :environment do
     Lit::LocalizationKey.destroy_all

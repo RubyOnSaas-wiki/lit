@@ -1,5 +1,6 @@
 <div class="ai-toolbar">
   <%= form_tag lit.ai_suggestions_path, method: :get, class: 'ai-toolbar', style: 'margin:0' do %>
+    <%= hidden_field_tag :kind, @search_options[:kind], id: nil %>
     <%= label_tag :locale, 'Locale', class: 'sr-only' %>
     <%= select_tag :locale,
                    options_for_select(Lit::Locale.ordered.pluck(:locale), @search_options[:locale]),
@@ -11,18 +12,21 @@
                    data: { placeholder: 'Filter by tag' } %>
     <button type="submit" class="btn btn-sm btn-primary"><%= draw_icon 'search' %> Filter</button>
     <% if @search_options[:locale].present? || selected_tag_names.any? %>
-      <%= link_to 'clear', lit.ai_suggestions_path, class: 'btn btn-sm btn-link' %>
+      <%= link_to 'clear', lit.ai_suggestions_path(kind: @search_options[:kind]), class: 'btn btn-sm btn-link' %>
     <% end %>
   <% end %>
 
   <span class="ai-spacer"></span>
 
   <% total = @scope.count %>
+  <% corrections = @search_options[:kind] == 'corrected' %>
   <% if total.positive? %>
     <span class="ai-count"><%= pluralize(total, 'proposal') %><%= ' matching your filter' if @search_options[:locale].present? || selected_tag_names.any? %></span>
     <%= link_to lit.accept_all_ai_suggestions_path(@search_options.to_hash),
                 method: :post, class: 'btn btn-sm btn-success',
-                data: { confirm: "Accept #{total} proposal(s) and mark them ready for synchronization?" } do %>
+                data: { confirm: corrections ?
+                          "Accept #{total} correction(s)? Each one replaces a translation the application serves now, and is marked ready for synchronization." :
+                          "Accept #{total} proposal(s) and mark them ready for synchronization?" } do %>
       <i class="fa fa-check-square-o"></i> Accept all
     <% end %>
     <%= link_to lit.reject_all_ai_suggestions_path(@search_options.to_hash),

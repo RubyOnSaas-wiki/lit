@@ -15,6 +15,7 @@ module Lit
 
     def index
       @ai_suggestions = paginate(ordered_scope)
+      @kind_counts = @query.kind_counts
     end
 
     def accept
@@ -51,9 +52,12 @@ module Lit
                   notice: "Accepting #{@accepted_count} proposals in the background."
     end
 
+    # One DELETE rather than destroy_all's one per row: rejecting a full tab of
+    # thousands must not keep the browser waiting. Proposals have no callbacks
+    # or dependents to run.
     def reject_all
-      @scope.destroy_all
-      redirect_to filtered_path
+      rejected = @scope.delete_all
+      redirect_to filtered_path, notice: "Rejected #{rejected} proposals."
     end
 
     private
@@ -61,10 +65,13 @@ module Lit
     def find_search_options
       @search_options =
         if params.respond_to?(:permit)
-          params.permit(:locale, :tags, tags: [])
+          params.permit(:locale, :kind, :tags, tags: [])
         else
-          params.slice('locale', 'tags')
+          params.slice('locale', 'kind', 'tags')
         end
+      # Always one of the two tabs, never both: "accept all" must not reach
+      # corrections from the new-translations tab.
+      @search_options[:kind] = 'new' unless AiSuggestionSearchQuery::KINDS.include?(@search_options[:kind])
       @query = AiSuggestionSearchQuery.new(@search_options)
       @scope = @query.perform
     end
