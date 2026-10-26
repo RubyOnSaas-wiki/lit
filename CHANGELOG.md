@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-10-26
+### Fixed
+- `POST /lit/api/v1/ai/lookup` reported a translated key as `missing` when the Lit cache did
+  not hold it yet. The cache fills lazily, so rows created after its last full load (imports,
+  the environment sync) are absent until the app first renders the key, and the app then
+  serves the row. Lookup now falls back to the row, as `AiSuggestion#current_value` does.
+
 ## [1.3.0] - 2026-10-26
 ### Added
 - AI translated tab split into **New** and **Corrected**. New holds keys with no

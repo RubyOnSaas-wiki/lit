@@ -52,13 +52,17 @@ module Lit
               unknown = []
             end
             locales = lookup_locales
+            source = Lit::Locale.find_by(locale: Lit::AiSuggestion::SOURCE_LOCALE)
             suggestions = Lit::AiSuggestion.where(localization_key_id: keys.map(&:id), locale_id: locales.map(&:id))
                                            .index_by { |suggestion| [suggestion.localization_key_id, suggestion.locale_id] }
+            rows = Lit::Localization.where(localization_key_id: keys.map(&:id),
+                                           locale_id: (locales + [source]).compact.map(&:id))
+                                    .index_by { |row| [row.localization_key_id, row.locale_id] }
 
             render json: {
               source_locale: Lit::AiSuggestion::SOURCE_LOCALE,
               total: total,
-              keys: keys.map { |key| lookup_entry(key, locales, suggestions) },
+              keys: keys.map { |key| lookup_entry(key, locales, source, suggestions, rows) },
               unknown_keys: unknown
             }
           end
@@ -131,10 +135,10 @@ module Lit
               existing_suggestion: suggestion&.suggested_value }
           end
 
-          def lookup_entry(key, locales, suggestions)
-            source_value = cached_value(Lit::AiSuggestion::SOURCE_LOCALE, key)
+          def lookup_entry(key, locales, source, suggestions, rows)
+            source_value = source && served_value(source, key, rows)
             translations = locales.each_with_object({}) do |locale, all|
-              value = cached_value(locale.locale, key)
+              value = served_value(locale, key, rows)
               all[locale.locale] = {
                 value: value,
                 status: Lit::AiSuggestion.translation_status(locale.locale, value, source_value),
@@ -162,6 +166,16 @@ module Lit
 
           def cached_value(locale_code, key)
             Lit.init.cache["#{locale_code}.#{key.localization_key}"]
+          end
+
+          # The cache fills lazily, so a row created after its last full load
+          # (an import, the environment sync) is missing from it until the app
+          # first renders the key -- and the app then serves the row. Same
+          # fallback as Lit::AiSuggestion#current_value.
+          def served_value(locale, key, rows)
+            cached = cached_value(locale.locale, key)
+            return cached unless cached.nil?
+            rows[[key.id, locale.id]]&.translation
           end
 
           def process_item(item, result)

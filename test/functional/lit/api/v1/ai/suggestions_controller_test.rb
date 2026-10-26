@@ -248,6 +248,22 @@ module Lit
       assert_equal 'same_as_source', translations['da']['status']
     end
 
+    # The cache fills lazily: a row created after the last full load (imports,
+    # sync) only reaches it once the app renders the key. Until then the app
+    # still serves the row, so lookup must not call it missing.
+    test 'falls back to the database when the cache does not have the key yet' do
+      en = Lit::Locale.find_by!(locale: 'en')
+      @key.localizations.create!(locale: en, translated_value: 'Org tree', is_changed: true)
+      @key.localizations.create!(locale: @locale, translated_value: 'Organisationsträd', is_changed: true)
+      assert_nil Lit.init.cache['sv.hr.tree.title']
+
+      post :lookup, params: { keys: ['hr.tree.title'], locales: ['sv'] }, as: :json
+
+      sv = lookup_entry(JSON.parse(response.body), 'hr.tree.title')['translations']['sv']
+      assert_equal 'Organisationsträd', sv['value']
+      assert_equal 'translated', sv['status']
+    end
+
     test 'reports a locale with no value as missing' do
       post :lookup, params: { keys: ['hr.tree.title'], locales: ['sv'] }, as: :json
 
