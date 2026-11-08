@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-11-08
+### Removed
+- 1.3.2's storing of `default:` text, which must not be deployed. A default can be built at
+  runtime ("Welcome Anna", an upload error naming the file) and nothing at this level tells it
+  from a fixed text, so one person's text would be served to everybody after them; an html-safe
+  default raised on save and turned the request into a 500. Such keys show `null` again, as
+  they did in 1.3.1.
+
 ## [1.3.2] - 2026-11-08
 ### Fixed
 - Text a key gets from the code (`t('key', default: 'Text')`, `I18n.t` likewise) or from a

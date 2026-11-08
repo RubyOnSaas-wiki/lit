@@ -28,12 +28,7 @@ module Lit
       content = super(locale, key, options)
 
       if on_rails_6_1_or_higher?
-        # Rails' `t` view helper first asks for the key with a placeholder as the
-        # default and, on a miss, asks again with no key and the real default.
-        # Remembered per thread: every thread shares this backend.
-        if rails_missing_marker?(options[:default])
-          Thread.current[:lit_untranslated_key] = content == options[:default] ? key : nil
-        end
+        @untranslated_key = key if key.present? && options[:default].instance_of?(Object)
 
         if key.nil? && options[:lit_default_copy].present?
           update_default_localization(locale, options)
@@ -338,39 +333,12 @@ module Lit
         ::Rails::VERSION::MAJOR >= 7
     end
 
-    # An Object in older Rails, a large negative Integer in current ones.
-    def rails_missing_marker?(default)
-      default.instance_of?(Object) || default.is_a?(Integer)
-    end
-
     def update_default_localization(locale, options)
-      untranslated_key = Thread.current[:lit_untranslated_key]
-      Thread.current[:lit_untranslated_key] = nil
-      return if untranslated_key.blank?
-
-      parts = ::I18n.normalize_keys(locale, untranslated_key, options[:scope], options[:separator])
+      parts = ::I18n.normalize_keys(locale, @untranslated_key, options[:scope], options[:separator])
       key_with_locale = parts.join('.')
-      return unless should_cache?(key_with_locale, options, false)
-
       content = options[:lit_default_copy]
       # we do not force array on singular strings packed into Array
-      force_array = content.is_a?(Array) && content.length > 1
-      @cache.update_locale(key_with_locale, content, force_array)
-      update_source_locale(key_with_locale, content, force_array)
-    end
-
-    # Text in `default:` is written in the application's default language,
-    # whichever language the page was rendered in. Without it there, a Danish row
-    # holding that text has nothing to be compared with and reads as translated.
-    # Cache#update_locale leaves a row alone once it has text.
-    def update_source_locale(key_with_locale, content, force_array = false)
-      return if content.blank? || !Array(content).all?(String)
-
-      locale, key_without_locale = ::Lit::Cache.split_key(key_with_locale)
-      source_locale = ::I18n.default_locale.to_s
-      return if locale == source_locale
-
-      @cache.update_locale("#{source_locale}.#{key_without_locale}", content, force_array)
+      @cache.update_locale(key_with_locale, content, content.is_a?(Array) && content.length > 1)
     end
 
     def can_dup_default(options = {})
@@ -436,7 +404,6 @@ module Lit
               @cache[key_with_locale] = default_cand
               @cache[key_with_locale]
             end
-            update_source_locale(key_with_locale, content)
           end
 
           if content.nil? && !on_rails_6_1_or_higher? && ::Lit::Services::HumanizeService.should_humanize?(key)

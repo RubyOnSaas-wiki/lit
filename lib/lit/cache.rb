@@ -276,7 +276,6 @@ module Lit
                              .where(localization_key_id: localization_key.id)
                              .first_or_initialize
           if update_value || localization.new_record?
-            literal_text = literal_text?(value)
             if value.is_a?(Array)
               value = parse_array_value(value, locale) unless force_array
             elsif !value.nil?
@@ -294,10 +293,9 @@ module Lit
             localization.locale = locale
             localization.localization_key = localization_key
             localization.full_key_str = full_key
-            # A new row always takes the value. An existing row only takes text
-            # the code or a locale file supplies, and only while it has none: a
-            # translator's work and an earlier default are never replaced.
-            if localization.new_record? || (literal_text && localization.default_value.nil?)
+            # Only update default_value for new records - never update existing translations
+            # Existing translations can only be updated manually by the user
+            if localization.new_record?
               localization.update_default_value(value)
             end
             @localization_object_cache[full_key] = localization
@@ -306,13 +304,6 @@ module Lit
       end
       
       localization
-    end
-
-    # The key's own text, as opposed to a Symbol pointing at another key or the
-    # numeric marker that ends Rails' lookup chains.
-    def literal_text?(value)
-      return value.present? if value.is_a?(String)
-      value.is_a?(Array) && value.present? && value.all?(String)
     end
 
     # fallback to translation in different locale
