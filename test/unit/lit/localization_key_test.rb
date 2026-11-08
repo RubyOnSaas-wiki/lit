@@ -36,6 +36,22 @@ module Lit
       assert @loc2.reload.is_changed
     end
 
+    test '#change_all_completed puts the rows into the next synchronization' do
+      @lk.localizations.update_all(updated_at: 2.days.ago)
+
+      @lk.change_all_completed
+
+      assert_equal [@loc1.id, @loc2.id].sort, Lit::Localization.after(1.day.ago).pluck(:id).sort
+    end
+
+    test '#soft_destroy leaves the rows out of the next synchronization' do
+      @lk.localizations.update_all(updated_at: 2.days.ago)
+
+      @lk.soft_destroy
+
+      assert_empty Lit::Localization.after(1.day.ago)
+    end
+
     test '#soft_destroy should mark translation key as deleted and translations as completed' do
       assert_not @lk.is_completed
       assert_not @loc1.is_changed

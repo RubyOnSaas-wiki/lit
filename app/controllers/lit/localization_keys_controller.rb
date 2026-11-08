@@ -81,7 +81,7 @@ module Lit
       @search_options =
         if params.respond_to?(:permit)
           # `tags` is an array; a flat splat into #permit silently drops it.
-          params.permit(:key, :key_prefix, :order, :tags, tags: [])
+          params.permit(:key, :key_prefix, :order, :tags, :show_empty_lookups, tags: [])
         else
           params.slice(*valid_keys)
         end
@@ -112,7 +112,7 @@ module Lit
     end
 
     def valid_keys
-      %w[key key_prefix order tags]
+      %w[key key_prefix order tags show_empty_lookups]
     end
 
     def tag_options_key_scope

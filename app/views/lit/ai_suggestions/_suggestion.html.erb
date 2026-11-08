@@ -4,6 +4,10 @@
   </td>
   <td class="ai-current">
     <%= render 'lit/localization_keys/localization_row', localization: suggestion.current_value %>
+    <% if suggestion.still_source_text? %>
+      <span class="ai-badge ai-badge-untranslated"
+            title="The application shows the English text because this language has no translation yet. Accepting adds the first one.">English &ndash; not translated yet</span>
+    <% end %>
     <% if suggestion.stale? %>
       <span class="ai-badge ai-badge-stale"
             title="The translation changed after this proposal was made">changed since</span>

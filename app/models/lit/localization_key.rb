@@ -2,6 +2,21 @@ module Lit
   class LocalizationKey < Lit::Base
     attr_accessor :interpolated_key
 
+    # Keys Rails and state_machines try on the way to a more general text or a
+    # humanized name. Lit keeps a row for each because it was looked up, not
+    # because anybody has a text for it.
+    RAILS_LOOKUP_PREFIXES = %w[
+      activerecord.errors.
+      activemodel.errors.
+      errors.attributes.
+      activerecord.attributes.
+      activemodel.attributes.
+      attributes.
+      activerecord.models.
+      activerecord.state_machines.
+      helpers.label.
+    ].freeze
+
     ## SCOPES
     scope :completed, -> { where(is_completed: true) }
     scope :not_completed, -> { where(is_completed: false) }
@@ -10,6 +25,14 @@ module Lit
     scope :active, -> { where(is_deleted: false) }
     scope :not_active, -> { where(is_deleted: true) }
     scope :visited_again, -> { where(is_visited_again: true) }
+    scope :empty_rails_lookups, lambda {
+      key = arel_table[:localization_key]
+      # rows without a key exist, and a NULL inside NOT IN would match nothing
+      with_text = Lit::Localization.where.not(localization_key_id: nil)
+                                   .where('default_value IS NOT NULL OR translated_value IS NOT NULL')
+      where(RAILS_LOOKUP_PREFIXES.map { |prefix| key.matches("#{prefix}%") }.reduce(:or))
+        .where.not(id: with_text.select(:localization_key_id))
+    }
     scope :after, lambda { |dt|
       joins(:localizations)
         .where('lit_localization_keys.updated_at >= ?', dt)
@@ -76,17 +99,16 @@ module Lit
       LocalizationKeySearchQuery.new(self, options).perform
     end
 
+    # The environment sync selects rows by updated_at, and update_all does not
+    # set it, so it is set here or the rows would never be sent.
     def change_all_completed
-      self.class.transaction do
-        toggle(:is_completed).save!
-        localizations.update_all is_changed: is_completed
-      end
+      toggle_all_completed(updated_at: Time.current)
     end
 
     def soft_destroy
       ActiveRecord::Base.transaction do
         update is_deleted: true
-        change_all_completed
+        toggle_all_completed
         remove_from_cache
       end
     end
@@ -105,6 +127,13 @@ module Lit
     end
 
     private
+
+    def toggle_all_completed(row_attributes = {})
+      self.class.transaction do
+        toggle(:is_completed).save!
+        localizations.update_all({ is_changed: is_completed }.merge(row_attributes))
+      end
+    end
 
     def check_completed
       self.is_completed = localizations.changed.count == localizations.count

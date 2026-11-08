@@ -5,6 +5,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-08
+### Fixed
+- Text a key gets from the code (`t('key', default: 'Text')`, `I18n.t` likewise) or from a
+  locale file now reaches the Translate! list instead of showing `null`. Since 2025-12 a row
+  created empty could never take it, and on Rails 7.1+ Lit no longer recognised the placeholder
+  the `t` view helper passes. Only rows that are still empty and not marked Completed are
+  filled. Symbol defaults and Rails' lookup-chain marker are not copied in. Text met while
+  rendering another language also fills the default locale's row, so the AI tab can tell the
+  other language is still untranslated.
+- The whole-key Completed icon now sets `updated_at`, so those rows enter the next
+  synchronization. Its icon shows the completed state; it was reading the starred one.
+- The Translate! list falls back to the database when the cache does not hold a key yet.
+- A synchronization no longer loses rows changed on the remote while it runs: the remote's
+  last change is read before its rows, and the stored date steps back one second.
+
+### Changed
+- The Translate! list hides empty keys Rails only looks up on the way to a more general text
+  (`activerecord.errors.*`, `helpers.label.*`, ...). A sidebar link shows them, and searching
+  for a key finds them. No data is removed.
+- A current value still in English is labelled "English – not translated yet" on the AI tab.
+
 ## [1.3.1] - 2026-10-26
 ### Fixed
 - `POST /lit/api/v1/ai/lookup` reported a translated key as `missing` when the Lit cache did

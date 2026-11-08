@@ -12,6 +12,7 @@ class LocalizationKeySearchQuery
     search_key
     search_tags
     search_completed
+    hide_empty_rails_lookups
     @scope
   end
 
@@ -59,6 +60,12 @@ class LocalizationKeySearchQuery
   def search_completed
     return if @params[:include_completed].to_i != 1
     @scope = @scope.not_completed
+  end
+
+  # Someone searching for a key wants to find it, whatever state it is in.
+  def hide_empty_rails_lookups
+    return if @params[:show_empty_lookups].to_i == 1 || @params[:key].present?
+    @scope = @scope.where.not(id: Lit::LocalizationKey.unscoped.empty_rails_lookups.select(:id))
   end
 
   def localization_key_col

@@ -46,6 +46,14 @@
           deleted and visited again
         <% end %>
       </li>
+      <% showing_empty_lookups = @search_options[:show_empty_lookups].present? %>
+      <li class="<%= 'active' if showing_empty_lookups %>">
+        <%= link_to url_for(showing_empty_lookups ? @search_options.except(:show_empty_lookups) : @search_options.merge(show_empty_lookups: 1)),
+                    title: 'Rails looks these keys up before falling back to a more general text. They stay empty on purpose and need no translation.' do %>
+          <%= draw_icon 'eye' %>
+          <%= showing_empty_lookups ? 'hide' : 'show' %> empty Rails keys
+        <% end %>
+      </li>
       <li class="nav-header"><%= I18n.t(".order_by", :default => "Order by") %>:</li>
       <% Lit::LocalizationKey.order_options.each do |order| %>
         <li class="<%= "active" if order == @search_options[:order]  %>">

@@ -116,6 +116,7 @@ select.js-tag-filter { height: 30px; }
 }
 .ai-badge-edited { background: #e8f4fd; border-color: #cfe6f5; color: #31708f; }
 .ai-badge-stale { background: #fcf3e3; border-color: #f0e0bd; color: #8a6d3b; }
+.ai-badge-untranslated { background: #f2f2f2; border-color: #e0e0e0; color: #666; }
 
 .ai-edit { margin-top: 6px; }
 .ai-edit textarea { font-size: 13px; margin-bottom: 6px; }

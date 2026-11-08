@@ -86,7 +86,95 @@ module Lit
       assert_response :success
     end
 
+    test 'the key-level icon shows whether the key is completed, not starred' do
+      @localization_key.update_columns(is_completed: true, is_starred: false)
+
+      get :index
+
+      assert_select "tr.localization_key_row[data-id='#{@localization_key.id}'] a.check_icon i.fa-check-circle"
+    end
+
+    test 'the list shows a translation the cache does not hold yet' do
+      row = text_row('only.in.database', translated_value: 'From the database', is_changed: true)
+
+      get :index, params: { key: 'only.in.database' }
+
+      assert_select "td.localization_row[data-id='#{row.id}']", /From the database/
+    end
+
+    %w[
+      activerecord.errors.models.company.attributes.logo.invalid
+      activemodel.errors.models.search.attributes.term.blank
+      errors.attributes.cv.too_large
+      activerecord.attributes.company.cvr_number
+      activemodel.attributes.search.term
+      attributes.hiring_advice
+      activerecord.models.company
+      activerecord.state_machines.user.state.states.active
+      helpers.label.company.name
+    ].each do |name|
+      test "#{name} is left out of the list while it is empty" do
+        probe = text_row(name).localization_key
+
+        get :index
+
+        assert_not_includes assigns(:localization_keys).to_a, probe
+      end
+    end
+
+    test 'a Rails lookup key with text stays in the list' do
+      filled = text_row('activerecord.attributes.company.name', default_value: 'Company name').localization_key
+
+      get :index
+
+      assert_includes assigns(:localization_keys).to_a, filled
+    end
+
+    %w[errors.messages.not_in_future flash.billing.destroy.notice billing.invoice.title].each do |name|
+      test "#{name} stays in the list even while it is empty" do
+        real = text_row(name).localization_key
+
+        get :index
+
+        assert_includes assigns(:localization_keys).to_a, real
+      end
+    end
+
+    test 'a row without a key does not stop empty Rails lookup keys being hidden' do
+      Lit::Localization.new(locale: Lit::Locale.where(locale: 'en').first_or_create!, default_value: 'orphan')
+                       .save!(validate: false)
+      probe = text_row('helpers.label.company.name').localization_key
+
+      get :index
+
+      assert_not_includes assigns(:localization_keys).to_a, probe
+    end
+
+    test 'the sidebar link brings the empty Rails lookup keys back' do
+      probe = text_row('helpers.label.company.name').localization_key
+
+      get :index
+      assert_select "a[href*='show_empty_lookups=1']"
+
+      get :index, params: { show_empty_lookups: 1 }
+      assert_includes assigns(:localization_keys).to_a, probe
+    end
+
+    test 'searching for an empty Rails lookup key finds it' do
+      probe = text_row('activerecord.errors.models.company.carrierwave_download_error').localization_key
+
+      get :index, params: { key: 'carrierwave_download_error' }
+
+      assert_includes assigns(:localization_keys).to_a, probe
+    end
+
     private
+
+    def text_row(name, attributes = {})
+      Lit::LocalizationKey.create!(localization_key: name).localizations.create!(
+        { locale: Lit::Locale.where(locale: 'en').first_or_create! }.merge(attributes)
+      )
+    end
 
     def with_fresh_cache
       old_cache, old_backend = Lit.loader.cache, I18n.backend

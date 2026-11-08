@@ -3,9 +3,12 @@ class SynchronizeSourceService
     @source = source
   end
 
+  # The remote's newest change is read before its rows, so anything it changes
+  # while they are imported falls inside the next sync's window.
   def execute
+    last_change = fetch_last_change
     synchronize_localizations
-    update_timestamps
+    update_timestamps(last_change)
   end
 
   private
@@ -43,8 +46,13 @@ class SynchronizeSourceService
     loc['localization_key_is_deleted'] || false
   end
 
-  def update_timestamps
-    @source.assign_last_updated_at(fetch_last_change)
+  # The remote returns rows changed at least a second after this date. Going
+  # back one second keeps rows written later in that same second; fetching a row
+  # twice is harmless, it updates the same incoming record or is skipped as a
+  # duplicate.
+  def update_timestamps(last_change)
+    @source.assign_last_updated_at(last_change)
+    @source.last_updated_at -= 1.second
     @source.sync_complete = true
     @source.save!
   end

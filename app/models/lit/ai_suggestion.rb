@@ -123,6 +123,11 @@ module Lit
       self.class.translation_status(locale.locale, current_value, source_value) == :translated
     end
 
+    # True when the application still serves the English text in this locale.
+    def still_source_text?
+      self.class.translation_status(locale.locale, current_value, source_value) == :same_as_source
+    end
+
     # True when the translation changed after this proposal was recorded, i.e.
     # somebody translated the key by hand in the meantime.
     def stale?

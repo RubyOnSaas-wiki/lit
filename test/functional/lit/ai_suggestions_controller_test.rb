@@ -225,6 +225,31 @@ module Lit
       assert_equal [@correction], Lit::AiSuggestion.all.to_a
     end
 
+    # --- values that are still the English text ------------------------------
+
+    test 'a current value still in English is labelled as not translated yet' do
+      Lit.init.cache.update_cache('en.hr.tree.title', 'Organisation tree')
+      Lit.init.cache.update_cache('sv.hr.tree.title', 'Organisation tree')
+
+      get :index
+
+      assert_select "tr.ai-row[data-id='#{@hr_suggestion.id}'] .ai-badge-untranslated"
+    end
+
+    test 'an empty current value carries no English label' do
+      get :index
+
+      assert_select "tr.ai-row[data-id='#{@billing_suggestion.id}'] .ai-badge-untranslated", false
+    end
+
+    test 'a real translation carries no English label' do
+      Lit.init.cache.update_cache('en.hr.menu.people', 'People')
+
+      get :index, params: { kind: 'corrected' }
+
+      assert_select "tr.ai-row[data-id='#{@correction.id}'] .ai-badge-untranslated", false
+    end
+
     test 'inherits host authentication from Lit::ApplicationController' do
       assert_operator Lit::AiSuggestionsController, :<, Lit::ApplicationController
     end
